@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(python:*)",
+      "Bash(venvScripts:*)",
+      "Bash(pip install:*)",
+      "Bash(mv:*)",
+      "Bash(del Drivers.vue Maintenance.vue Vehicles.vue)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)"
+    ],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "C:\\c\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\frontend\\src",
+      "C:\\c\\Users\\Dan Rera\\Git Repos"
+    ]
+  }
+}
