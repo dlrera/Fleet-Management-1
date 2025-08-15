@@ -13,7 +13,9 @@
       "Bash(git add:*)",
       "Bash(git push:*)",
       "Bash(gh auth:*)",
-      "Bash(git remote set-url:*)"
+      "Bash(git remote set-url:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run test:run:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
