@@ -1,53 +1,108 @@
 <template>
-  <div id="app">
-    <!-- Loading Screen -->
-    <div v-if="authStore.isLoading" class="d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-      <div class="text-center">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-2 text-muted">Loading...</p>
-      </div>
-    </div>
+  <v-app>
+    <template v-if="!authStore.isAuthenticated">
+      <router-view />
+    </template>
     
-    <!-- Authenticated Layout -->
-    <AppLayout v-else-if="authStore.isAuthenticated" />
-    
-    <!-- Public Layout (Login/Register) -->
-    <router-view v-else />
-  </div>
+    <template v-else>
+      <!-- Navigation Drawer -->
+      <v-navigation-drawer
+        v-model="drawer"
+        app
+        color="secondary"
+        dark
+      >
+        <v-list-item
+          class="px-2 py-4"
+          title="Fleet Management"
+          subtitle="System"
+        >
+          <template v-slot:prepend>
+            <v-icon size="40">mdi-truck</v-icon>
+          </template>
+        </v-list-item>
+
+        <v-divider></v-divider>
+
+        <v-list density="compact" nav>
+          <v-list-item
+            prepend-icon="mdi-view-dashboard"
+            title="Dashboard"
+            to="/"
+            color="primary"
+          ></v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+
+      <!-- App Bar -->
+      <v-app-bar app color="primary" dark>
+        <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+        <v-toolbar-title>Fleet Management System</v-toolbar-title>
+        <v-spacer></v-spacer>
+        
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn icon v-bind="props">
+              <v-icon>mdi-account-circle</v-icon>
+            </v-btn>
+          </template>
+          <v-list>
+            <v-list-item class="px-4">
+              <v-list-item-title>{{ authStore.currentUser?.username }}</v-list-item-title>
+              <v-list-item-subtitle>{{ authStore.currentUser?.email }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-divider></v-divider>
+            <v-list-item @click="handleLogout">
+              <template v-slot:prepend>
+                <v-icon>mdi-logout</v-icon>
+              </template>
+              <v-list-item-title>Logout</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-app-bar>
+
+      <!-- Main Content -->
+      <v-main>
+        <router-view />
+      </v-main>
+    </template>
+  </v-app>
 </template>
 
 <script>
-import { useAuthStore } from '@/store/auth'
-import { onMounted } from 'vue'
-import AppLayout from '@/components/Layout/AppLayout.vue'
+import { ref, onMounted } from 'vue'
+import { useAuthStore } from './stores/auth'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'App',
-  components: {
-    AppLayout
-  },
   setup() {
     const authStore = useAuthStore()
+    const router = useRouter()
+    const drawer = ref(true)
+
+    const handleLogout = async () => {
+      await authStore.logout()
+      router.push('/login')
+    }
 
     onMounted(async () => {
       // Check authentication on app start
-      if (authStore.token && !authStore.isChecked) {
-        await authStore.checkAuth()
+      if (authStore.token) {
+        try {
+          await authStore.fetchUser()
+        } catch (error) {
+          console.error('Failed to fetch user:', error)
+        }
       }
     })
 
     return {
-      authStore
+      authStore,
+      drawer,
+      handleLogout
     }
   }
 }
 </script>
-
-<style>
-#app {
-  min-height: 100vh;
-  background-color: #f8f9fa;
-}
-</style>

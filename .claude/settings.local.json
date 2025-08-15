@@ -10,7 +10,10 @@
       "Bash(rm:*)",
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(gh auth:*)",
+      "Bash(git remote set-url:*)"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

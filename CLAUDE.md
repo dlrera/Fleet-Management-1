@@ -1,0 +1,1 @@
+- The main hexes for our branding are Primary Colors: Blue #216093, White #FFFFFF; Secondary Colors: Navy Blue #001B48, Teal #57949A, Light Gray #F9FAFA, Black #000000; Tertiary Colors: Orange #E18331, Green #2E933C, Red #DB162F, Medium Blue #224870, Yellow #F0C319

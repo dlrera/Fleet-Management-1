@@ -3,22 +3,43 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
-// Import Bootstrap and Bootstrap Icons
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap-icons/font/bootstrap-icons.css'
-import 'bootstrap'
+// Vuetify
+import 'vuetify/styles'
+import { createVuetify } from 'vuetify'
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+import '@mdi/font/css/materialdesignicons.css'
 
-// Import custom styles
-import './assets/styles/main.scss'
-
-// Import Toast plugin
-import { ToastPlugin } from './utils/toast'
+const vuetify = createVuetify({
+  components,
+  directives,
+  theme: {
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        colors: {
+          primary: '#216093',     // Blue
+          secondary: '#001B48',   // Navy Blue
+          accent: '#57949A',      // Teal
+          error: '#DB162F',       // Red
+          info: '#224870',        // Medium Blue
+          success: '#2E933C',     // Green
+          warning: '#E18331',     // Orange
+          background: '#F9FAFA',  // Light Gray
+          surface: '#FFFFFF',     // White
+          'on-background': '#000000', // Black
+          'on-surface': '#000000'
+        }
+      }
+    }
+  }
+})
 
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
-app.use(ToastPlugin)
+app.use(vuetify)
 
 app.mount('#app')

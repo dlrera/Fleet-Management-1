@@ -1,112 +1,189 @@
 <template>
-  <div class="login-page">
-    <div class="container">
-      <div class="row justify-content-center min-vh-100 align-items-center">
-        <div class="col-md-5 col-lg-4">
-          <div class="card shadow">
-            <div class="card-body p-4">
-              <div class="text-center mb-4">
-                <i class="bi bi-truck fs-1 text-primary"></i>
-                <h2 class="mt-2">Fleet Management</h2>
-                <p class="text-muted">Sign in to your account</p>
-              </div>
+  <v-container fluid class="fill-height" style="background: linear-gradient(135deg, #216093 0%, #001B48 100%);">
+    <v-row align="center" justify="center">
+      <v-col cols="12" sm="8" md="6" lg="4">
+        <v-card elevation="12" rounded="lg">
+          <v-card-title class="text-h4 text-center py-6 bg-primary">
+            <v-icon size="40" class="mr-2">mdi-shield-lock</v-icon>
+            <span class="text-white">Welcome Back</span>
+          </v-card-title>
+          
+          <v-card-text class="pa-8">
+            <v-form @submit.prevent="handleLogin" ref="form" v-model="valid">
+              <v-text-field
+                v-model="credentials.username"
+                label="Username"
+                prepend-inner-icon="mdi-account"
+                variant="outlined"
+                class="mb-4"
+                :rules="[rules.required]"
+                :disabled="loading"
+                color="primary"
+              ></v-text-field>
 
-              <div v-if="error" class="alert alert-danger" role="alert">
+              <v-text-field
+                v-model="credentials.password"
+                label="Password"
+                prepend-inner-icon="mdi-lock"
+                variant="outlined"
+                :type="showPassword ? 'text' : 'password'"
+                :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                @click:append-inner="showPassword = !showPassword"
+                :rules="[rules.required]"
+                :disabled="loading"
+                color="primary"
+              ></v-text-field>
+
+              <v-checkbox
+                v-model="rememberMe"
+                label="Remember me"
+                color="primary"
+                class="mb-4"
+              ></v-checkbox>
+
+              <v-alert
+                v-if="error"
+                type="error"
+                variant="tonal"
+                class="mb-4"
+                closable
+                @click:close="error = null"
+              >
                 {{ error }}
-              </div>
+              </v-alert>
 
-              <form @submit.prevent="handleLogin">
-                <div class="mb-3">
-                  <label for="username" class="form-label">Username</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-person"></i>
-                    </span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="username"
-                      v-model="credentials.username"
-                      required
-                      placeholder="Enter username"
-                    />
-                  </div>
-                </div>
+              <v-btn
+                type="submit"
+                block
+                size="large"
+                color="primary"
+                :loading="loading"
+                :disabled="!valid || loading"
+                class="mb-4"
+              >
+                <v-icon left>mdi-login</v-icon>
+                Sign In
+              </v-btn>
 
-                <div class="mb-3">
-                  <label for="password" class="form-label">Password</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-lock"></i>
-                    </span>
-                    <input
-                      type="password"
-                      class="form-control"
-                      id="password"
-                      v-model="credentials.password"
-                      required
-                      placeholder="Enter password"
-                    />
-                  </div>
-                </div>
-
-                <div class="d-grid gap-2">
-                  <button 
-                    type="submit" 
-                    class="btn btn-primary"
-                    :disabled="loading"
-                  >
-                    <span v-if="loading">
-                      <span class="spinner-border spinner-border-sm me-2"></span>
-                      Signing in...
-                    </span>
-                    <span v-else>
-                      <i class="bi bi-box-arrow-in-right me-2"></i>
-                      Sign In
-                    </span>
-                  </button>
-                </div>
-              </form>
-
-              <hr class="my-4" />
+              <v-divider class="my-4"></v-divider>
 
               <div class="text-center">
-                <p class="mb-0">
-                  Don't have an account?
-                  <router-link to="/register" class="text-decoration-none">
-                    Sign up
-                  </router-link>
-                </p>
+                <p class="text-body-2 mb-2">Demo Credentials</p>
+                <v-chip-group>
+                  <v-chip color="accent" variant="tonal" @click="fillDemoCredentials">
+                    <v-icon start size="small">mdi-account</v-icon>
+                    admin / admin123
+                  </v-chip>
+                </v-chip-group>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            </v-form>
+          </v-card-text>
+
+          <v-card-actions class="px-8 pb-8">
+            <v-btn variant="text" color="primary" block @click="showRegister = true">
+              Don't have an account? Sign Up
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+
+        <!-- Registration Dialog -->
+        <v-dialog v-model="showRegister" max-width="500">
+          <v-card>
+            <v-card-title class="text-h5 bg-primary text-white">
+              Create Account
+            </v-card-title>
+            <v-card-text class="pt-6">
+              <v-form @submit.prevent="handleRegister" ref="registerForm" v-model="registerValid">
+                <v-text-field
+                  v-model="registerData.username"
+                  label="Username"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  class="mb-3"
+                ></v-text-field>
+                <v-text-field
+                  v-model="registerData.email"
+                  label="Email"
+                  variant="outlined"
+                  :rules="[rules.required, rules.email]"
+                  class="mb-3"
+                ></v-text-field>
+                <v-text-field
+                  v-model="registerData.password"
+                  label="Password"
+                  type="password"
+                  variant="outlined"
+                  :rules="[rules.required, rules.minLength]"
+                  class="mb-3"
+                ></v-text-field>
+                <v-text-field
+                  v-model="registerData.password2"
+                  label="Confirm Password"
+                  type="password"
+                  variant="outlined"
+                  :rules="[rules.required, rules.passwordMatch]"
+                ></v-text-field>
+              </v-form>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn variant="text" @click="showRegister = false">Cancel</v-btn>
+              <v-btn color="primary" variant="elevated" @click="handleRegister" :loading="loading">
+                Create Account
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
 import { ref } from 'vue'
+import { useAuthStore } from '../stores/auth'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/store/auth'
 
 export default {
   name: 'Login',
   setup() {
-    const router = useRouter()
     const authStore = useAuthStore()
+    const router = useRouter()
+    
+    const valid = ref(false)
+    const registerValid = ref(false)
+    const loading = ref(false)
+    const error = ref(null)
+    const showPassword = ref(false)
+    const rememberMe = ref(false)
+    const showRegister = ref(false)
     
     const credentials = ref({
       username: '',
       password: ''
     })
     
-    const loading = ref(false)
-    const error = ref('')
-
+    const registerData = ref({
+      username: '',
+      email: '',
+      password: '',
+      password2: ''
+    })
+    
+    const rules = {
+      required: v => !!v || 'This field is required',
+      email: v => /.+@.+\..+/.test(v) || 'Invalid email',
+      minLength: v => v.length >= 8 || 'Password must be at least 8 characters',
+      passwordMatch: v => v === registerData.value.password || 'Passwords do not match'
+    }
+    
+    const fillDemoCredentials = () => {
+      credentials.value.username = 'admin'
+      credentials.value.password = 'admin123'
+    }
+    
     const handleLogin = async () => {
-      error.value = ''
+      error.value = null
       loading.value = true
       
       try {
@@ -118,43 +195,43 @@ export default {
         loading.value = false
       }
     }
-
+    
+    const handleRegister = async () => {
+      if (!registerValid.value) return
+      
+      loading.value = true
+      try {
+        await authStore.register(registerData.value)
+        showRegister.value = false
+        router.push('/')
+      } catch (err) {
+        error.value = err.response?.data?.detail || 'Registration failed'
+      } finally {
+        loading.value = false
+      }
+    }
+    
     return {
-      credentials,
+      valid,
+      registerValid,
       loading,
       error,
-      handleLogin
+      showPassword,
+      rememberMe,
+      showRegister,
+      credentials,
+      registerData,
+      rules,
+      fillDemoCredentials,
+      handleLogin,
+      handleRegister
     }
   }
 }
 </script>
 
 <style scoped>
-.login-page {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.fill-height {
   min-height: 100vh;
-}
-
-.card {
-  border: none;
-  border-radius: 1rem;
-}
-
-.input-group-text {
-  background-color: transparent;
-  border-right: none;
-}
-
-.form-control {
-  border-left: none;
-}
-
-.form-control:focus {
-  box-shadow: none;
-  border-color: #ced4da;
-}
-
-.input-group:focus-within .input-group-text {
-  border-color: #86b7fe;
 }
 </style>
