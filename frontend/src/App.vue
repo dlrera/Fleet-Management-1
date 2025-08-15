@@ -30,6 +30,15 @@
             title="Dashboard"
             to="/"
             color="primary"
+            style="color: white !important;"
+          ></v-list-item>
+          
+          <v-list-item
+            prepend-icon="mdi-truck"
+            title="Assets"
+            to="/assets"
+            color="primary"
+            style="color: white !important;"
           ></v-list-item>
         </v-list>
       </v-navigation-drawer>

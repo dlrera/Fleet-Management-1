@@ -13,6 +13,32 @@ const routes = [
     name: 'Dashboard',
     component: () => import('../views/Dashboard.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/assets',
+    name: 'AssetsList',
+    component: () => import('../views/Assets/AssetsList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/assets/create',
+    name: 'AssetCreate',
+    component: () => import('../views/Assets/AssetForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/assets/:id',
+    name: 'AssetDetail',
+    component: () => import('../views/Assets/AssetDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/assets/:id/edit',
+    name: 'AssetEdit',
+    component: () => import('../views/Assets/AssetForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
   }
 ]
 
