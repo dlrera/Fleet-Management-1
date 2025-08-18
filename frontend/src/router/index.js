@@ -90,6 +90,18 @@ const routes = [
     component: () => import('../views/Fuel/FuelForm.vue'),
     meta: { requiresAuth: true },
     props: true
+  },
+  {
+    path: '/admin/users',
+    name: 'UserManagement',
+    component: () => import('../views/Admin/UserManagement.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/audit',
+    name: 'AuditLogs',
+    component: () => import('../views/Admin/AuditLogs.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -106,6 +118,10 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } 
+  // Check if route requires admin role
+  else if (to.meta.requiresAdmin && !authStore.isAdmin) {
+    next('/')
+  }
   // Check if route requires guest (not authenticated)
   else if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next('/')

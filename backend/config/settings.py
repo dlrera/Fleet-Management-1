@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'authentication.audit_middleware.AuditLoggingMiddleware',  # Add audit logging
 ]
 
 # Exempt API endpoints from CSRF (they use token auth)

@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import login, logout
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from .serializers import UserSerializer, LoginSerializer, RegisterSerializer
 
 
@@ -17,9 +17,13 @@ def login_view(request):
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
         
+        # Get user roles
+        user_roles = list(user.groups.values_list('name', flat=True))
+        
         response = Response({
             'token': token.key,
             'user': UserSerializer(user).data,
+            'roles': user_roles,
             'message': 'Login successful'
         })
         
@@ -45,9 +49,17 @@ def register_view(request):
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
         
+        # Assign default role to new users
+        default_group = Group.objects.filter(name='Read-only').first()
+        if default_group:
+            user.groups.add(default_group)
+        
+        user_roles = list(user.groups.values_list('name', flat=True))
+        
         response = Response({
             'token': token.key,
             'user': UserSerializer(user).data,
+            'roles': user_roles,
             'message': 'Registration successful'
         }, status=status.HTTP_201_CREATED)
         
@@ -82,15 +94,19 @@ def logout_view(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_view(request):
-    return Response(UserSerializer(request.user).data)
+    user_data = UserSerializer(request.user).data
+    user_data['roles'] = list(request.user.groups.values_list('name', flat=True))
+    return Response(user_data)
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def check_auth(request):
     if request.user.is_authenticated:
+        user_data = UserSerializer(request.user).data
+        user_data['roles'] = list(request.user.groups.values_list('name', flat=True))
         return Response({
             'authenticated': True,
-            'user': UserSerializer(request.user).data
+            'user': user_data
         })
     return Response({'authenticated': False})

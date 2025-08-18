@@ -83,8 +83,31 @@
             <v-list-item class="px-4">
               <v-list-item-title>{{ authStore.currentUser?.username }}</v-list-item-title>
               <v-list-item-subtitle>{{ authStore.currentUser?.email }}</v-list-item-subtitle>
+              <v-list-item-subtitle v-if="authStore.roles.length > 0" class="mt-1">
+                <v-chip
+                  v-for="role in authStore.roles"
+                  :key="role"
+                  size="x-small"
+                  class="mr-1"
+                  :color="getRoleColor(role)"
+                >
+                  {{ role }}
+                </v-chip>
+              </v-list-item-subtitle>
             </v-list-item>
             <v-divider></v-divider>
+            <v-list-item v-if="authStore.isAdmin" @click="router.push('/admin/users')">
+              <template v-slot:prepend>
+                <v-icon>mdi-account-group</v-icon>
+              </template>
+              <v-list-item-title>Manage Users</v-list-item-title>
+            </v-list-item>
+            <v-list-item v-if="authStore.isAdmin" @click="router.push('/admin/audit')">
+              <template v-slot:prepend>
+                <v-icon>mdi-file-document-outline</v-icon>
+              </template>
+              <v-list-item-title>Audit Logs</v-list-item-title>
+            </v-list-item>
             <v-list-item @click="handleLogout">
               <template v-slot:prepend>
                 <v-icon>mdi-logout</v-icon>
@@ -119,6 +142,16 @@ export default {
       await authStore.logout()
       router.push('/login')
     }
+    
+    const getRoleColor = (role) => {
+      const colors = {
+        'Admin': 'red',
+        'Fleet Manager': 'blue',
+        'Technician': 'green',
+        'Read-only': 'grey'
+      }
+      return colors[role] || 'default'
+    }
 
     onMounted(async () => {
       // Check authentication on app start
@@ -134,7 +167,9 @@ export default {
     return {
       authStore,
       drawer,
-      handleLogout
+      router,
+      handleLogout,
+      getRoleColor
     }
   }
 }

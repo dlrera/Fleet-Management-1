@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
+from authentication.permissions import DriverPermission
 from django.db.models import Q, Count
 from django.db import transaction
 from django.http import HttpResponse
@@ -27,7 +28,7 @@ class DriverViewSet(viewsets.ModelViewSet):
     queryset = Driver.objects.all().prefetch_related(
         'certifications', 'asset_assignments__asset', 'violations'
     )
-    permission_classes = [IsAuthenticated]
+    permission_classes = [DriverPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['employment_status', 'license_type', 'department', 'position']
     search_fields = ['driver_id', 'first_name', 'last_name', 'email', 'license_number']

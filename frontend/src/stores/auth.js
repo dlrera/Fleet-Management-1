@@ -5,6 +5,7 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     token: localStorage.getItem('token') || null,
+    roles: [],
     isLoading: false,
     error: null,
   }),
@@ -12,6 +13,25 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (state) => !!state.token,
     currentUser: (state) => state.user,
+    
+    // Role-based getters
+    isAdmin: (state) => state.roles.includes('Admin'),
+    isFleetManager: (state) => state.roles.includes('Fleet Manager') || state.roles.includes('Admin'),
+    isTechnician: (state) => state.roles.includes('Technician') || state.roles.includes('Fleet Manager') || state.roles.includes('Admin'),
+    isReadOnly: (state) => state.roles.includes('Read-only') && state.roles.length === 1,
+    
+    // Permission helpers
+    canCreateAsset: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    canEditAsset: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    canDeleteAsset: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    
+    canCreateDriver: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    canEditDriver: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    canDeleteDriver: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
+    
+    canCreateFuel: (state) => state.roles.some(r => ['Admin', 'Fleet Manager', 'Technician'].includes(r)),
+    canEditFuel: (state) => state.roles.some(r => ['Admin', 'Fleet Manager', 'Technician'].includes(r)),
+    canDeleteFuel: (state) => state.roles.some(r => ['Admin', 'Fleet Manager'].includes(r)),
   },
 
   actions: {
@@ -22,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
         const response = await authAPI.login(credentials)
         this.token = response.data.token
         this.user = response.data.user
+        this.roles = response.data.roles || []
         localStorage.setItem('token', this.token)
         return response.data
       } catch (error) {
@@ -39,6 +60,7 @@ export const useAuthStore = defineStore('auth', {
         const response = await authAPI.register(userData)
         this.token = response.data.token
         this.user = response.data.user
+        this.roles = response.data.roles || ['Read-only']
         localStorage.setItem('token', this.token)
         return response.data
       } catch (error) {
@@ -57,6 +79,7 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.token = null
         this.user = null
+        this.roles = []
         localStorage.removeItem('token')
       }
     },
@@ -66,6 +89,7 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await authAPI.getUser()
         this.user = response.data
+        this.roles = response.data.roles || []
         return response.data
       } catch (error) {
         this.error = error.response?.data || 'Failed to fetch user'
@@ -84,6 +108,7 @@ export const useAuthStore = defineStore('auth', {
         const response = await authAPI.checkAuth()
         if (response.data.authenticated) {
           this.user = response.data.user
+          this.roles = response.data.user.roles || []
           return true
         }
         this.logout()

@@ -12,6 +12,7 @@
         
         <div class="d-flex align-center gap-3">
           <v-btn
+            v-if="authStore.canCreateFuel"
             color="primary"
             prepend-icon="mdi-plus"
             @click="$router.push('/fuel/new')"
@@ -19,6 +20,7 @@
             Add Fuel Transaction
           </v-btn>
           <v-btn
+            v-if="authStore.canCreateFuel"
             variant="outlined"
             prepend-icon="mdi-upload"
             @click="showImportDialog = true"
@@ -244,12 +246,14 @@
         
         <template #item.actions="{ item }">
           <v-btn
+            v-if="canEditTransaction(item)"
             icon="mdi-pencil"
             size="small"
             variant="text"
             @click="$router.push(`/fuel/${item.id}/edit`)"
           />
           <v-btn
+            v-if="authStore.canDeleteFuel"
             icon="mdi-delete"
             size="small"
             variant="text"
@@ -318,10 +322,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useFuelStore } from '../../stores/fuel'
 import { useAssetsStore } from '../../stores/assets'
+import { useAuthStore } from '../../stores/auth'
 
 // Stores
 const fuelStore = useFuelStore()
 const assetsStore = useAssetsStore()
+const authStore = useAuthStore()
 
 // Component state
 const currentPage = ref(1)
@@ -375,6 +381,18 @@ const assetOptions = computed(() => {
 })
 
 // Methods
+const canEditTransaction = (transaction) => {
+  // Admin and Fleet Manager can edit all
+  if (authStore.isAdmin || authStore.isFleetManager) return true
+  
+  // Technicians can edit their own entries
+  if (authStore.isTechnician && transaction.created_by === authStore.currentUser?.id) {
+    return true
+  }
+  
+  return false
+}
+
 const formatNumber = (value, decimals = 0) => {
   if (!value) return '0'
   return parseFloat(value).toLocaleString(undefined, {

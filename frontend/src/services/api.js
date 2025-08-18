@@ -41,6 +41,10 @@ export const authAPI = {
   logout: () => api.post('/auth/logout/'),
   getUser: () => api.get('/auth/user/'),
   checkAuth: () => api.get('/auth/check/'),
+  // Generic methods for user management
+  get: (url) => api.get(url),
+  post: (url, data) => api.post(url, data),
+  delete: (url) => api.delete(url)
 }
 
 export const assetsAPI = {

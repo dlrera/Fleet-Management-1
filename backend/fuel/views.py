@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import csv
 import io
 from decimal import Decimal
+from authentication.permissions import FuelTransactionPermission, RoleBasedPermission
 
 from .models import FuelTransaction, FuelSite, FuelCard, FuelAlert, UnitsPolicy
 from .serializers import (
@@ -25,7 +26,7 @@ class FuelTransactionViewSet(viewsets.ModelViewSet):
     queryset = FuelTransaction.objects.select_related(
         'asset', 'fuel_site', 'created_by'
     ).prefetch_related('alerts')
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [FuelTransactionPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     
     # Filtering

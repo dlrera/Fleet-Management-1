@@ -1,67 +1,13 @@
+"""
+Audit and compliance models for role management
+"""
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-import uuid
+from django.utils import timezone
 import json
-
-
-class UserInvitation(models.Model):
-    """Model for user invitations"""
-    INVITATION_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('accepted', 'Accepted'),
-        ('expired', 'Expired'),
-        ('cancelled', 'Cancelled'),
-    ]
-    
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField()
-    first_name = models.CharField(max_length=100, blank=True)
-    last_name = models.CharField(max_length=100, blank=True)
-    role = models.CharField(max_length=50)  # Store group name
-    token = models.UUIDField(default=uuid.uuid4, unique=True)
-    status = models.CharField(max_length=20, choices=INVITATION_STATUS_CHOICES, default='pending')
-    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='sent_invitations')
-    created_at = models.DateTimeField(auto_now_add=True)
-    accepted_at = models.DateTimeField(null=True, blank=True)
-    expires_at = models.DateTimeField()
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"Invitation to {self.email} ({self.status})"
-    
-    def is_expired(self):
-        """Check if invitation has expired"""
-        return timezone.now() > self.expires_at
-    
-    def accept(self, user):
-        """Mark invitation as accepted"""
-        self.status = 'accepted'
-        self.accepted_at = timezone.now()
-        self.save()
-        return user
-
-
-class UserProfile(models.Model):
-    """Extended user profile for additional information"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    phone = models.CharField(max_length=20, blank=True)
-    department = models.CharField(max_length=100, blank=True)
-    position = models.CharField(max_length=100, blank=True)
-    employee_id = models.CharField(max_length=50, blank=True, unique=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    last_login_ip = models.GenericIPAddressField(null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    deactivated_at = models.DateTimeField(null=True, blank=True)
-    deactivated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='deactivated_users')
-    
-    def __str__(self):
-        return f"{self.user.username} Profile"
+import uuid
 
 
 class AuditLog(models.Model):
@@ -94,19 +40,19 @@ class AuditLog(models.Model):
     
     # Actor information
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='audit_actions')
-    actor_email = models.EmailField()
-    actor_role = models.CharField(max_length=50)
+    actor_email = models.EmailField()  # Store email in case user is deleted
+    actor_role = models.CharField(max_length=50)  # Role at time of action
     
     # Action details
     action = models.CharField(max_length=50, choices=ACTION_CHOICES, db_index=True)
     resource_type = models.CharField(max_length=100, db_index=True)
     resource_id = models.CharField(max_length=100, db_index=True)
-    resource_name = models.CharField(max_length=255)
+    resource_name = models.CharField(max_length=255)  # Human-readable identifier
     
     # Change details
     before_state = models.JSONField(null=True, blank=True)
     after_state = models.JSONField(null=True, blank=True)
-    changes = models.JSONField(null=True, blank=True)
+    changes = models.JSONField(null=True, blank=True)  # Diff of changes
     
     # Request context
     ip_address = models.GenericIPAddressField(null=True, blank=True)
@@ -115,9 +61,9 @@ class AuditLog(models.Model):
     session_id = models.CharField(max_length=100, blank=True)
     
     # Additional context
-    reason = models.TextField(blank=True)
-    approval_id = models.UUIDField(null=True, blank=True)
-    risk_score = models.IntegerField(default=0)
+    reason = models.TextField(blank=True)  # Reason for action if provided
+    approval_id = models.UUIDField(null=True, blank=True)  # Link to approval if required
+    risk_score = models.IntegerField(default=0)  # 0-100 risk assessment
     
     class Meta:
         ordering = ['-timestamp']
@@ -149,8 +95,8 @@ class Organization(models.Model):
     
     # Settings
     settings = models.JSONField(default=dict)
-    identity_settings = models.JSONField(default=dict)
-    security_settings = models.JSONField(default=dict)
+    identity_settings = models.JSONField(default=dict)  # SSO, SCIM configuration
+    security_settings = models.JSONField(default=dict)  # MFA, password policies
     
     # Compliance
     retention_days = models.IntegerField(default=365)
@@ -183,7 +129,7 @@ class Scope(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='scopes')
     name = models.CharField(max_length=255)
     scope_type = models.CharField(max_length=20, choices=SCOPE_TYPE_CHOICES)
-    criteria = models.JSONField(default=dict)
+    criteria = models.JSONField(default=dict)  # Filtering criteria
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     
     # Metadata
@@ -201,11 +147,11 @@ class Scope(models.Model):
 class Permission(models.Model):
     """Granular permission definitions"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    key = models.CharField(max_length=100, unique=True)
+    key = models.CharField(max_length=100, unique=True)  # e.g., 'assets.create'
     name = models.CharField(max_length=255)
     description = models.TextField()
-    category = models.CharField(max_length=50)
-    risk_level = models.IntegerField(default=1)
+    category = models.CharField(max_length=50)  # For grouping in UI
+    risk_level = models.IntegerField(default=1)  # 1-5 risk assessment
     requires_mfa = models.BooleanField(default=False)
     requires_approval = models.BooleanField(default=False)
     
@@ -222,7 +168,7 @@ class CustomRole(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='custom_roles')
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
-    is_system = models.BooleanField(default=False)
+    is_system = models.BooleanField(default=False)  # System roles cannot be modified
     inherited_from = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     
     # Permissions
@@ -251,7 +197,7 @@ class RolePermission(models.Model):
     role = models.ForeignKey(CustomRole, on_delete=models.CASCADE)
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
     effect = models.CharField(max_length=10, choices=EFFECT_CHOICES, default='allow')
-    conditions = models.JSONField(null=True, blank=True)
+    conditions = models.JSONField(null=True, blank=True)  # Additional conditions
     
     class Meta:
         unique_together = [['role', 'permission']]
@@ -304,8 +250,8 @@ class ApprovalRequest(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     requestor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='approval_requests')
-    action_key = models.CharField(max_length=100)
-    parameters = models.JSONField()
+    action_key = models.CharField(max_length=100)  # What action is being requested
+    parameters = models.JSONField()  # Parameters for the action
     reason = models.TextField()
     
     # Approval details
@@ -337,7 +283,7 @@ class APIToken(models.Model):
     token = models.CharField(max_length=255, unique=True)
     
     # Scopes and permissions
-    scopes = models.JSONField(default=list)
+    scopes = models.JSONField(default=list)  # List of permission keys
     role = models.ForeignKey(CustomRole, on_delete=models.SET_NULL, null=True, blank=True)
     
     # Usage tracking
