@@ -484,6 +484,36 @@ export const useDriversStore = defineStore('drivers', {
       }
     },
 
+    async deleteDriverPhoto(driverId) {
+      this.isUploadingPhoto = true
+      this.photoError = null
+      
+      try {
+        const response = await driversAPI.deletePhoto(driverId)
+        
+        // Update current driver if it's the same
+        if (this.currentDriver?.id === driverId) {
+          this.currentDriver.profile_photo = null
+        }
+        
+        // Update driver in drivers list
+        const driverIndex = this.drivers.findIndex(driver => driver.id === driverId)
+        if (driverIndex !== -1) {
+          this.drivers[driverIndex].profile_photo = null
+        }
+        
+        this.$emit?.('photo:deleted', response.data)
+        
+        return response.data
+      } catch (error) {
+        this.photoError = error.response?.data?.error || 'Failed to delete photo'
+        this.$emit?.('photo:error', this.photoError)
+        throw error
+      } finally {
+        this.isUploadingPhoto = false
+      }
+    },
+
     // Statistics actions
     async fetchDriverStats() {
       try {

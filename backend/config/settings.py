@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-6%1_6w0a29=!_1ih4brr@7js9*cqd!8j0_iiaj@y*db14k43bk')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'assets',
     'locations',
     'drivers',
+    'fuel',
 ]
 
 MIDDLEWARE = [

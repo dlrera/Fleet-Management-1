@@ -1,7 +1,7 @@
 ---
 name: filesystem-janitor
 description: Use this agent when you need to clean up and organize your project's file structure, remove unnecessary files, or ensure proper project hygiene. Examples: <example>Context: User has been developing for weeks and wants to clean up their project before a code review. user: 'My project has gotten messy with lots of temporary files and unused components. Can you clean it up?' assistant: 'I'll use the filesystem-janitor agent to analyze and clean up your project structure.' <commentary>The user is requesting project cleanup, so use the filesystem-janitor agent to remove unnecessary files and organize the structure.</commentary></example> <example>Context: User notices their build is slow and suspects unused files. user: 'The build seems slow and I think there might be unused files cluttering the project' assistant: 'Let me use the filesystem-janitor agent to identify and remove any unnecessary files that might be affecting your build performance.' <commentary>Performance issues due to file clutter warrant using the filesystem-janitor agent.</commentary></example>
-model: opus
+model: sonnet
 color: green
 ---
 

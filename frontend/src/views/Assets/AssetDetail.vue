@@ -128,6 +128,17 @@
               Asset Image
               <v-spacer />
               <v-btn
+                v-if="assetsStore.currentAsset?.image"
+                color="error"
+                variant="outlined"
+                size="small"
+                prepend-icon="mdi-delete"
+                class="mr-2"
+                @click="showImageDeleteDialog = true"
+              >
+                Delete Image
+              </v-btn>
+              <v-btn
                 color="primary"
                 variant="outlined"
                 size="small"
@@ -738,6 +749,41 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Image Delete Confirmation Dialog -->
+    <v-dialog v-model="showImageDeleteDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h5">
+          <v-icon color="error" class="mr-2">mdi-alert</v-icon>
+          Delete Asset Image
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-1 mb-4">
+            Are you sure you want to delete this asset's image? This action cannot be undone.
+          </p>
+          <div v-if="assetsStore.currentAsset?.thumbnail" class="text-center">
+            <v-img
+              :src="assetsStore.currentAsset.thumbnail"
+              class="delete-preview mx-auto"
+              max-width="150"
+              cover
+            />
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showImageDeleteDialog = false">Cancel</v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="isUploadingImage"
+            @click="deleteAssetImage"
+          >
+            Delete Image
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     
     <!-- Location Path Tracing Modal -->
     <LocationPathModal
@@ -991,6 +1037,7 @@ const driversStore = useDriversStore()
 
 const showUploadDialog = ref(false)
 const showImageUploadDialog = ref(false)
+const showImageDeleteDialog = ref(false)
 const deleteDialog = ref(false)
 
 // Driver assignments state
@@ -1551,6 +1598,16 @@ const uploadImage = async () => {
     imageUploadError.value = error.response?.data?.error || 'Failed to upload image. Please try again.'
   } finally {
     isUploadingImage.value = false
+  }
+}
+
+const deleteAssetImage = async () => {
+  try {
+    await assetsStore.deleteImage(route.params.id)
+    showImageDeleteDialog.value = false
+  } catch (error) {
+    console.error('Image delete failed:', error)
+    // Error handling is managed by the store
   }
 }
 

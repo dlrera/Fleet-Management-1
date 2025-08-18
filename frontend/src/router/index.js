@@ -71,6 +71,25 @@ const routes = [
     component: () => import('../views/Drivers/DriverForm.vue'),
     meta: { requiresAuth: true },
     props: true
+  },
+  {
+    path: '/fuel',
+    name: 'FuelList',
+    component: () => import('../views/Fuel/FuelList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/fuel/new',
+    name: 'FuelCreate',
+    component: () => import('../views/Fuel/FuelForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/fuel/:id/edit',
+    name: 'FuelEdit',
+    component: () => import('../views/Fuel/FuelForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
   }
 ]
 

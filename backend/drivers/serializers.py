@@ -147,11 +147,6 @@ class DriverSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Driver must be at least 16 years old.")
         return value
     
-    def validate_license_expiration(self, value):
-        """Validate license expiration is not in the past"""
-        if value < date.today():
-            raise serializers.ValidationError("License expiration date cannot be in the past.")
-        return value
 
 
 class DriverListSerializer(serializers.ModelSerializer):
@@ -246,11 +241,6 @@ class DriverCreateUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Driver must be at least 16 years old.")
         return value
     
-    def validate_license_expiration(self, value):
-        """Validate license expiration is not in the past"""
-        if value < date.today():
-            raise serializers.ValidationError("License expiration date cannot be in the past.")
-        return value
 
 
 class DriverCertificationCreateUpdateSerializer(serializers.ModelSerializer):

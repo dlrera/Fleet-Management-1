@@ -400,6 +400,7 @@ const formData = ref({
   emergency_contact_name: '',
   emergency_contact_phone: '',
   emergency_contact_relationship: '',
+  profile_photo: '',
   notes: ''
 })
 
@@ -444,12 +445,14 @@ const loadDriverData = async () => {
       await driversStore.fetchDriver(route.params.id)
       const driver = driversStore.currentDriver
       if (driver) {
-        // Populate form with existing driver data
+        console.log('Loading driver data:', driver)
+        // Populate form with existing driver data, excluding profile_photo since it's handled separately
         Object.keys(formData.value).forEach(key => {
-          if (driver[key] !== undefined) {
+          if (key !== 'profile_photo' && driver[key] !== undefined) {
             formData.value[key] = driver[key]
           }
         })
+        console.log('Form data after loading:', formData.value)
       }
     } catch (error) {
       console.error('Failed to load driver:', error)
@@ -505,11 +508,20 @@ const handleSubmit = async () => {
     formData.value.license_state = formData.value.license_state.toUpperCase()
     formData.value.state = formData.value.state.toUpperCase()
     
+    // Create submission data without profile_photo field (handled separately)
+    const submissionData = { ...formData.value }
+    delete submissionData.profile_photo
+    
+    // Debug logging
+    console.log('Form data before submission:', submissionData)
+    console.log('Is editing:', isEditing.value)
+    console.log('Route params ID:', route.params.id)
+    
     let driver
     if (isEditing.value) {
-      driver = await driversStore.updateDriver(route.params.id, formData.value)
+      driver = await driversStore.updateDriver(route.params.id, submissionData)
     } else {
-      driver = await driversStore.createDriver(formData.value)
+      driver = await driversStore.createDriver(submissionData)
     }
     
     // Upload photo if one was selected
@@ -521,6 +533,7 @@ const handleSubmit = async () => {
     router.push('/drivers')
   } catch (error) {
     console.error('Failed to save driver:', error)
+    console.error('Error details:', error.response?.data || error.message)
   }
 }
 

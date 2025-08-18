@@ -18,6 +18,7 @@ def login_view(request):
         token, created = Token.objects.get_or_create(user=user)
         
         response = Response({
+            'token': token.key,
             'user': UserSerializer(user).data,
             'message': 'Login successful'
         })
@@ -45,6 +46,7 @@ def register_view(request):
         token, created = Token.objects.get_or_create(user=user)
         
         response = Response({
+            'token': token.key,
             'user': UserSerializer(user).data,
             'message': 'Registration successful'
         }, status=status.HTTP_201_CREATED)

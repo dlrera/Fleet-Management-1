@@ -334,6 +334,38 @@ export const useAssetsStore = defineStore('assets', {
       }
     },
 
+    async deleteImage(assetId) {
+      this.isUploadingImage = true
+      this.imageError = null
+      
+      try {
+        const response = await assetsAPI.deleteImage(assetId)
+        
+        // Update current asset if it's the same
+        if (this.currentAsset?.id === assetId) {
+          this.currentAsset.image = null
+          this.currentAsset.thumbnail = null
+        }
+        
+        // Update asset in assets list
+        const assetIndex = this.assets.findIndex(asset => asset.id === assetId)
+        if (assetIndex !== -1) {
+          this.assets[assetIndex].image = null
+          this.assets[assetIndex].thumbnail = null
+        }
+        
+        this.$emit?.('image:deleted', response.data)
+        
+        return response.data
+      } catch (error) {
+        this.imageError = error.response?.data?.error || 'Failed to delete image'
+        this.$emit?.('image:error', this.imageError)
+        throw error
+      } finally {
+        this.isUploadingImage = false
+      }
+    },
+
     // Statistics actions
     async fetchAssetStats() {
       try {

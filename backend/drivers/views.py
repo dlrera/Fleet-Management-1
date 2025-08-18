@@ -221,6 +221,29 @@ class DriverViewSet(viewsets.ModelViewSet):
             'photo': request.build_absolute_uri(driver.profile_photo.url) if driver.profile_photo else None
         }, status=status.HTTP_200_OK)
     
+    @action(detail=True, methods=['delete'])
+    def delete_photo(self, request, pk=None):
+        """Delete the profile photo for a driver"""
+        driver = self.get_object()
+        
+        # Check if driver has a photo
+        if not driver.profile_photo:
+            return Response(
+                {'error': 'Driver has no photo to delete'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete photo file
+        driver.profile_photo.delete(save=False)
+        driver.profile_photo = None
+        
+        # Save the driver
+        driver.save()
+        
+        return Response({
+            'message': 'Photo deleted successfully'
+        }, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Get basic statistics about drivers"""

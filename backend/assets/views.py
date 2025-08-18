@@ -114,6 +114,33 @@ class AssetViewSet(viewsets.ModelViewSet):
             'thumbnail': request.build_absolute_uri(asset.thumbnail.url) if asset.thumbnail else None
         }, status=status.HTTP_200_OK)
     
+    @action(detail=True, methods=['delete'])
+    def delete_image(self, request, pk=None):
+        """Delete the image and thumbnail for an asset"""
+        asset = self.get_object()
+        
+        # Check if asset has an image
+        if not asset.image and not asset.thumbnail:
+            return Response(
+                {'error': 'Asset has no image to delete'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Delete image files
+        if asset.image:
+            asset.image.delete(save=False)
+            asset.image = None
+        if asset.thumbnail:
+            asset.thumbnail.delete(save=False)
+            asset.thumbnail = None
+        
+        # Save the asset
+        asset.save()
+        
+        return Response({
+            'message': 'Image deleted successfully'
+        }, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Get basic statistics about assets"""

@@ -83,7 +83,7 @@ class AssetListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'asset_id', 'vehicle_type', 'make', 'model', 'year',
             'license_plate', 'department', 'current_odometer', 'status',
-            'thumbnail', 'created_at', 'documents_count'
+            'image', 'thumbnail', 'created_at', 'documents_count'
         ]
     
     def get_documents_count(self, obj):

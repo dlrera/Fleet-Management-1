@@ -57,6 +57,7 @@ export const assetsAPI = {
   uploadImage: (id, data) => api.post(`/assets/${id}/upload_image/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  deleteImage: (id) => api.delete(`/assets/${id}/delete_image/`),
   getStats: () => api.get('/assets/stats/'),
   bulkImport: (data) => api.post('/assets/bulk_import/', data, {
     headers: { 'Content-Type': 'multipart/form-data' }
@@ -116,6 +117,7 @@ export const driversAPI = {
   uploadPhoto: (id, data) => api.post(`/drivers/drivers/${id}/upload_photo/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  deletePhoto: (id) => api.delete(`/drivers/drivers/${id}/delete_photo/`),
   
   // Driver certifications
   getDriverCertifications: (driverId) => api.get(`/drivers/drivers/${driverId}/certifications/`),
@@ -155,6 +157,56 @@ export const driversAPI = {
   createViolation: (data) => api.post('/drivers/violations/', data),
   updateViolation: (id, data) => api.put(`/drivers/violations/${id}/`, data),
   deleteViolation: (id) => api.delete(`/drivers/violations/${id}/`),
+}
+
+export const fuelAPI = {
+  // Fuel transactions
+  getFuelTransactions: (params = {}) => api.get('/fuel/transactions/', { params }),
+  getFuelTransaction: (id) => api.get(`/fuel/transactions/${id}/`),
+  createFuelTransaction: (data) => api.post('/fuel/transactions/', data),
+  updateFuelTransaction: (id, data) => api.put(`/fuel/transactions/${id}/`, data),
+  deleteFuelTransaction: (id) => api.delete(`/fuel/transactions/${id}/`),
+  
+  // Fuel statistics and reporting
+  getFuelStats: (params = {}) => api.get('/fuel/transactions/stats/', { params }),
+  bulkCreateTransactions: (data) => api.post('/fuel/transactions/bulk_create/', data),
+  
+  // CSV import
+  importFuelCSV: (formData, previewOnly = false) => {
+    if (previewOnly) {
+      formData.append('preview_only', 'true')
+    }
+    return api.post('/fuel/transactions/import_csv/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
+  
+  // Fuel sites
+  getFuelSites: (params = {}) => api.get('/fuel/sites/', { params }),
+  getFuelSite: (id) => api.get(`/fuel/sites/${id}/`),
+  createFuelSite: (data) => api.post('/fuel/sites/', data),
+  updateFuelSite: (id, data) => api.put(`/fuel/sites/${id}/`, data),
+  deleteFuelSite: (id) => api.delete(`/fuel/sites/${id}/`),
+  
+  // Fuel cards
+  getFuelCards: (params = {}) => api.get('/fuel/cards/', { params }),
+  getFuelCard: (id) => api.get(`/fuel/cards/${id}/`),
+  createFuelCard: (data) => api.post('/fuel/cards/', data),
+  updateFuelCard: (id, data) => api.put(`/fuel/cards/${id}/`, data),
+  deleteFuelCard: (id) => api.delete(`/fuel/cards/${id}/`),
+  
+  // Fuel alerts
+  getFuelAlerts: (params = {}) => api.get('/fuel/alerts/', { params }),
+  getFuelAlert: (id) => api.get(`/fuel/alerts/${id}/`),
+  createFuelAlert: (data) => api.post('/fuel/alerts/', data),
+  updateFuelAlert: (id, data) => api.put(`/fuel/alerts/${id}/`, data),
+  deleteFuelAlert: (id) => api.delete(`/fuel/alerts/${id}/`),
+  resolveFuelAlert: (id, data) => api.post(`/fuel/alerts/${id}/resolve/`, data),
+  acknowledgeFuelAlert: (id) => api.post(`/fuel/alerts/${id}/acknowledge/`),
+  
+  // Units policy
+  getUnitsPolicy: () => api.get('/fuel/policy/current/'),
+  updateUnitsPolicy: (id, data) => api.put(`/fuel/policy/${id}/`, data),
 }
 
 export default api

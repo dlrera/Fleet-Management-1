@@ -12,14 +12,50 @@
       <div class="page-header">
         <div class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-4">
-            <v-avatar size="80" class="driver-avatar">
-              <v-img
-                v-if="driver.profile_photo"
-                :src="driver.profile_photo"
-                :alt="driver.full_name"
-              />
-              <v-icon v-else size="40" color="grey-lighten-1">mdi-account</v-icon>
-            </v-avatar>
+            <v-badge
+              overlap
+              class="driver-avatar-container"
+            >
+              <template v-slot:badge>
+                <v-menu v-if="driver.profile_photo" location="bottom">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      icon="mdi-dots-horizontal"
+                      size="x-small"
+                      color="primary"
+                      v-bind="props"
+                    />
+                  </template>
+                  <v-list>
+                    <v-list-item
+                      prepend-icon="mdi-camera"
+                      title="Change Photo"
+                      @click="showPhotoUploadDialog = true"
+                    />
+                    <v-list-item
+                      prepend-icon="mdi-delete"
+                      title="Delete Photo"
+                      @click="showPhotoDeleteDialog = true"
+                    />
+                  </v-list>
+                </v-menu>
+                <v-btn
+                  v-else
+                  icon="mdi-camera"
+                  size="x-small"
+                  color="primary"
+                  @click="showPhotoUploadDialog = true"
+                />
+              </template>
+              <v-avatar size="80" class="driver-avatar">
+                <v-img
+                  v-if="driver.profile_photo"
+                  :src="driver.profile_photo"
+                  :alt="driver.full_name"
+                />
+                <v-icon v-else size="40" color="grey-lighten-1">mdi-account</v-icon>
+              </v-avatar>
+            </v-badge>
             
             <div>
               <h1 class="text-h4 mb-1">{{ driver.full_name }}</h1>
@@ -648,6 +684,150 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Photo Upload Dialog -->
+    <v-dialog v-model="showPhotoUploadDialog" max-width="600">
+      <v-card>
+        <v-card-title>Upload Driver Photo</v-card-title>
+        <v-card-text>
+          <v-form ref="photoUploadForm" @submit.prevent="uploadPhoto">
+            <v-alert
+              type="info"
+              variant="tonal"
+              class="mb-4"
+            >
+              <div class="text-body-2">
+                Upload a professional photo of the driver. The image will be automatically resized to 300x300px.
+                <br><strong>Accepted formats:</strong> JPEG, PNG, WebP (Max 2MB)
+              </div>
+            </v-alert>
+            
+            <!-- Photo Upload Area -->
+            <div
+              class="photo-upload-zone pa-6 text-center rounded"
+              :class="{ 'photo-upload-zone--active': isPhotoDragging }"
+              @drop.prevent="handlePhotoDrop"
+              @dragover.prevent="isPhotoDragging = true"
+              @dragleave.prevent="isPhotoDragging = false"
+            >
+              <v-icon size="48" class="mb-2" color="grey">
+                {{ selectedPhotoFile ? 'mdi-file-image' : 'mdi-camera-plus' }}
+              </v-icon>
+              
+              <p v-if="!selectedPhotoFile" class="text-body-2 mb-2">
+                Drag and drop photo here or click to browse
+              </p>
+              
+              <div v-else class="mb-2">
+                <p class="text-body-2 font-weight-medium">
+                  {{ selectedPhotoFile.name }}
+                  <v-chip size="small" class="ml-2">
+                    {{ formatFileSize(selectedPhotoFile.size) }}
+                  </v-chip>
+                </p>
+                
+                <!-- Photo Preview -->
+                <div v-if="photoPreviewUrl" class="mt-3">
+                  <v-img
+                    :src="photoPreviewUrl"
+                    class="photo-preview mx-auto"
+                    max-width="300"
+                    cover
+                  />
+                </div>
+              </div>
+              
+              <input
+                ref="photoFileInput"
+                type="file"
+                hidden
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                @change="handlePhotoFileSelect"
+              />
+              
+              <v-btn
+                v-if="!selectedPhotoFile"
+                size="small"
+                variant="outlined"
+                @click="$refs.photoFileInput.click()"
+              >
+                Choose Photo
+              </v-btn>
+              
+              <v-btn
+                v-else
+                size="small"
+                variant="text"
+                color="error"
+                @click="clearPhotoFile"
+              >
+                Remove Photo
+              </v-btn>
+            </div>
+            
+            <p class="text-caption text-medium-emphasis mt-2">
+              Recommended: Square photo (e.g., 300x300px)
+            </p>
+            
+            <!-- Upload Error -->
+            <v-alert
+              v-if="photoUploadError"
+              type="error"
+              class="mt-4"
+              closable
+              @click:close="photoUploadError = ''"
+            >
+              {{ photoUploadError }}
+            </v-alert>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closePhotoUploadDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="isUploadingPhoto"
+            :disabled="!selectedPhotoFile"
+            @click="uploadPhoto"
+          >
+            Upload
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Photo Delete Confirmation Dialog -->
+    <v-dialog v-model="showPhotoDeleteDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h5">
+          <v-icon color="error" class="mr-2">mdi-alert</v-icon>
+          Delete Driver Photo
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-1 mb-4">
+            Are you sure you want to delete {{ driver?.full_name }}'s profile photo? This action cannot be undone.
+          </p>
+          <div v-if="driver?.profile_photo" class="text-center">
+            <v-avatar size="100" class="mx-auto">
+              <v-img :src="driver.profile_photo" />
+            </v-avatar>
+          </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showPhotoDeleteDialog = false">Cancel</v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="isUploadingPhoto"
+            @click="deleteDriverPhoto"
+          >
+            Delete Photo
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -664,6 +844,16 @@ const driversStore = useDriversStore()
 // Component state
 const assignments = ref([])
 const certifications = ref([])
+
+// Photo upload state
+const showPhotoUploadDialog = ref(false)
+const showPhotoDeleteDialog = ref(false)
+const selectedPhotoFile = ref(null)
+const photoPreviewUrl = ref('')
+const isPhotoDragging = ref(false)
+const isUploadingPhoto = ref(false)
+const photoUploadError = ref('')
+const photoFileInput = ref(null)
 
 
 // Computed property to remove duplicate assignments per asset
@@ -800,6 +990,103 @@ const getCertificationStatusColor = (cert) => {
   if (cert.is_expired) return 'error'
   if (cert.expires_soon) return 'warning'
   return 'success'
+}
+
+// Photo upload handlers
+const handlePhotoFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    validateAndSetPhotoFile(file)
+  }
+}
+
+const handlePhotoDrop = (event) => {
+  isPhotoDragging.value = false
+  const file = event.dataTransfer.files[0]
+  if (file) {
+    validateAndSetPhotoFile(file)
+  }
+}
+
+const validateAndSetPhotoFile = (file) => {
+  // Check file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    photoUploadError.value = 'Invalid file type. Please upload JPEG, PNG, or WebP images.'
+    return
+  }
+  
+  // Check file size (2MB max)
+  if (file.size > 2097152) {
+    photoUploadError.value = 'Photo size must be less than 2MB'
+    return
+  }
+  
+  selectedPhotoFile.value = file
+  photoUploadError.value = ''
+  
+  // Create preview URL
+  if (photoPreviewUrl.value) {
+    URL.revokeObjectURL(photoPreviewUrl.value)
+  }
+  photoPreviewUrl.value = URL.createObjectURL(file)
+}
+
+const clearPhotoFile = () => {
+  selectedPhotoFile.value = null
+  if (photoFileInput.value) {
+    photoFileInput.value.value = ''
+  }
+  if (photoPreviewUrl.value) {
+    URL.revokeObjectURL(photoPreviewUrl.value)
+    photoPreviewUrl.value = ''
+  }
+}
+
+const closePhotoUploadDialog = () => {
+  showPhotoUploadDialog.value = false
+  clearPhotoFile()
+  photoUploadError.value = ''
+  isPhotoDragging.value = false
+}
+
+const uploadPhoto = async () => {
+  if (!selectedPhotoFile.value) return
+  
+  isUploadingPhoto.value = true
+  photoUploadError.value = ''
+  
+  try {
+    const formData = new FormData()
+    formData.append('photo', selectedPhotoFile.value)
+    
+    await driversStore.uploadDriverPhoto(route.params.id, formData)
+    
+    closePhotoUploadDialog()
+  } catch (error) {
+    console.error('Photo upload failed:', error)
+    photoUploadError.value = error.response?.data?.error || 'Failed to upload photo. Please try again.'
+  } finally {
+    isUploadingPhoto.value = false
+  }
+}
+
+const deleteDriverPhoto = async () => {
+  try {
+    await driversStore.deleteDriverPhoto(route.params.id)
+    showPhotoDeleteDialog.value = false
+  } catch (error) {
+    console.error('Photo delete failed:', error)
+    // Error handling is managed by the store
+  }
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
 }
 
 // Safety validation functions
@@ -1085,5 +1372,38 @@ watch(showAssignAssetDialog, (newValue) => {
 
 .assignment-item:hover {
   background-color: #f5f5f5;
+}
+
+/* Photo Upload Styles */
+.photo-upload-zone {
+  border: 2px dashed #e0e0e0;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.photo-upload-zone:hover {
+  border-color: #57949A;
+  background-color: rgba(87, 148, 154, 0.05);
+}
+
+.photo-upload-zone--active {
+  border-color: #216093;
+  background-color: rgba(33, 96, 147, 0.05);
+}
+
+.photo-preview {
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.driver-avatar-container {
+  position: relative;
+}
+
+.driver-avatar-container :deep(.v-badge__badge) {
+  bottom: 0;
+  right: 0;
 }
 </style>

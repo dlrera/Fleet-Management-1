@@ -50,6 +50,14 @@
           ></v-list-item>
           
           <v-list-item
+            prepend-icon="mdi-gas-station"
+            title="Fuel"
+            to="/fuel"
+            color="primary"
+            style="color: white !important;"
+          ></v-list-item>
+          
+          <v-list-item
             prepend-icon="mdi-map"
             title="Locations"
             to="/locations"
