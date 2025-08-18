@@ -18,8 +18,19 @@
           :to="{ name: 'AssetCreate' }"
           data-testid="add-asset-btn"
           aria-label="Add new asset"
+          class="mr-2"
         >
           Add Asset
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          size="small"
+          prepend-icon="mdi-file-upload"
+          @click="showImportDialog = true"
+          data-testid="import-csv-btn"
+          aria-label="Import CSV"
+        >
+          Import CSV
         </v-btn>
       </v-col>
     </v-row>
@@ -231,6 +242,24 @@
         density="compact"
         @update:options="loadAssets"
       >
+        <!-- Thumbnail Column -->
+        <template #item.thumbnail="{ item }">
+          <div class="thumbnail-container">
+            <v-img
+              v-if="item.thumbnail"
+              :src="item.thumbnail"
+              :alt="`${item.asset_id} thumbnail`"
+              class="asset-thumbnail"
+              cover
+            />
+            <div v-else class="no-image-placeholder">
+              <v-icon size="24" color="grey-lighten-2">
+                {{ getVehicleTypeIcon(item.vehicle_type) }}
+              </v-icon>
+            </div>
+          </div>
+        </template>
+
         <!-- Asset ID Column -->
         <template #item.asset_id="{ item }">
           <router-link
@@ -288,7 +317,7 @@
 
         <!-- Actions Column -->
         <template #item.actions="{ item }">
-          <div class="d-flex ga-1">
+          <div class="d-flex ga-1 justify-center">
             <v-btn
               :to="{ name: 'AssetDetail', params: { id: item.id } }"
               icon="mdi-eye"
@@ -390,6 +419,145 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    
+    <!-- CSV Import Dialog -->
+    <v-dialog v-model="showImportDialog" max-width="600">
+      <v-card>
+        <v-card-title>Import Assets from CSV</v-card-title>
+        <v-card-text>
+          <v-form ref="importForm" @submit.prevent="importCSV">
+            <!-- Instructions -->
+            <v-alert
+              type="info"
+              variant="tonal"
+              class="mb-4"
+            >
+              <div class="text-body-2">
+                Upload a CSV file with asset data. Required columns:
+                <strong>asset_id, vehicle_type, make, model, year</strong>
+              </div>
+              <v-btn
+                size="small"
+                variant="text"
+                class="mt-2"
+                @click="downloadTemplate"
+              >
+                <v-icon left>mdi-download</v-icon>
+                Download Template
+              </v-btn>
+            </v-alert>
+            
+            <!-- File Upload Area -->
+            <div
+              class="import-zone pa-6 text-center rounded"
+              :class="{ 'import-zone--active': isCSVDragging }"
+              @drop.prevent="handleCSVDrop"
+              @dragover.prevent="isCSVDragging = true"
+              @dragleave.prevent="isCSVDragging = false"
+            >
+              <v-icon size="48" class="mb-2" color="grey">
+                {{ selectedCSVFile ? 'mdi-file-check' : 'mdi-file-delimited' }}
+              </v-icon>
+              
+              <p v-if="!selectedCSVFile" class="text-body-2 mb-2">
+                Drag and drop CSV file here or click to browse
+              </p>
+              
+              <p v-else class="text-body-2 mb-2 font-weight-medium">
+                {{ selectedCSVFile.name }}
+                <v-chip size="small" class="ml-2">
+                  {{ formatFileSize(selectedCSVFile.size) }}
+                </v-chip>
+              </p>
+              
+              <input
+                ref="csvFileInput"
+                type="file"
+                hidden
+                accept=".csv"
+                @change="handleCSVFileSelect"
+              />
+              
+              <v-btn
+                v-if="!selectedCSVFile"
+                size="small"
+                variant="outlined"
+                @click="$refs.csvFileInput.click()"
+              >
+                Choose File
+              </v-btn>
+              
+              <v-btn
+                v-else
+                size="small"
+                variant="text"
+                color="error"
+                @click="clearCSVFile"
+              >
+                Remove File
+              </v-btn>
+            </div>
+            
+            <p class="text-caption text-medium-emphasis mt-2">
+              CSV format only (Max 5MB)
+            </p>
+            
+            <!-- Import Results -->
+            <v-alert
+              v-if="importResults"
+              :type="importResults.error_count > 0 ? 'warning' : 'success'"
+              class="mt-4"
+              closable
+              @click:close="importResults = null"
+            >
+              <div class="text-body-2">
+                <strong>Import Complete!</strong><br>
+                Successfully imported: {{ importResults.success_count }} assets<br>
+                <span v-if="importResults.error_count > 0">
+                  Failed: {{ importResults.error_count }} rows
+                </span>
+              </div>
+              
+              <div v-if="importResults.errors && importResults.errors.length > 0" class="mt-2">
+                <strong>Errors:</strong>
+                <ul class="mt-1">
+                  <li v-for="error in importResults.errors.slice(0, 5)" :key="error.row">
+                    Row {{ error.row }} ({{ error.asset_id }}): {{ error.error }}
+                  </li>
+                  <li v-if="importResults.errors.length > 5">
+                    ... and {{ importResults.errors.length - 5 }} more errors
+                  </li>
+                </ul>
+              </div>
+            </v-alert>
+            
+            <!-- Import Error -->
+            <v-alert
+              v-if="importError"
+              type="error"
+              class="mt-4"
+              closable
+              @click:close="importError = ''"
+            >
+              {{ importError }}
+            </v-alert>
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeImportDialog">Cancel</v-btn>
+          <v-btn
+            color="primary"
+            variant="flat"
+            :loading="isImporting"
+            :disabled="!selectedCSVFile"
+            @click="importCSV"
+          >
+            Import
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Error Snackbar -->
     <v-snackbar
@@ -438,8 +606,24 @@ const deleteDialog = ref(false)
 const assetToDelete = ref(null)
 const showError = ref(false)
 
+// CSV Import state
+const showImportDialog = ref(false)
+const csvFileInput = ref(null)
+const importForm = ref(null)
+const selectedCSVFile = ref(null)
+const isCSVDragging = ref(false)
+const isImporting = ref(false)
+const importError = ref('')
+const importResults = ref(null)
+
 // Table headers configuration
 const headers = [
+  {
+    title: '',
+    key: 'thumbnail',
+    sortable: false,
+    width: '60px'
+  },
   {
     title: 'Asset ID',
     key: 'asset_id',
@@ -456,37 +640,43 @@ const headers = [
     title: 'Type',
     key: 'vehicle_type',
     sortable: true,
-    width: '100px'
+    width: '100px',
+    align: 'center'
   },
   {
     title: 'License',
     key: 'license_plate',
     sortable: true,
-    width: '100px'
+    width: '100px',
+    align: 'center'
   },
   {
     title: 'Department',
     key: 'department',
     sortable: true,
-    width: '120px'
+    width: '120px',
+    align: 'center'
   },
   {
     title: 'Status',
     key: 'status',
     sortable: true,
-    width: '100px'
+    width: '100px',
+    align: 'center'
   },
   {
     title: 'Odometer',
     key: 'current_odometer',
     sortable: true,
-    width: '100px'
+    width: '100px',
+    align: 'end'
   },
   {
     title: 'Docs',
     key: 'documents_count',
     sortable: true,
-    width: '70px'
+    width: '70px',
+    align: 'center'
   },
   {
     title: 'Actions',
@@ -667,6 +857,125 @@ const getStatusColor = (status) => {
   return colors[status] || 'grey'
 }
 
+// CSV Import functions
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+const handleCSVFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    validateAndSetCSVFile(file)
+  }
+}
+
+const handleCSVDrop = (event) => {
+  isCSVDragging.value = false
+  const file = event.dataTransfer.files[0]
+  if (file) {
+    validateAndSetCSVFile(file)
+  }
+}
+
+const validateAndSetCSVFile = (file) => {
+  // Check file type
+  if (!file.name.endsWith('.csv')) {
+    importError.value = 'File must be in CSV format'
+    return
+  }
+  
+  // Check file size (5MB max)
+  if (file.size > 5242880) {
+    importError.value = 'File size must be less than 5MB'
+    return
+  }
+  
+  selectedCSVFile.value = file
+  importError.value = ''
+  importResults.value = null
+}
+
+const clearCSVFile = () => {
+  selectedCSVFile.value = null
+  if (csvFileInput.value) {
+    csvFileInput.value.value = ''
+  }
+  importResults.value = null
+}
+
+const closeImportDialog = () => {
+  showImportDialog.value = false
+  selectedCSVFile.value = null
+  importError.value = ''
+  importResults.value = null
+  isCSVDragging.value = false
+}
+
+const downloadTemplate = async () => {
+  try {
+    const response = await assetsStore.downloadCSVTemplate()
+    
+    // Create a blob from the response
+    const blob = new Blob([response.data], { type: 'text/csv' })
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'assets_import_template.csv'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Failed to download template:', error)
+    importError.value = 'Failed to download template. Please try again.'
+  }
+}
+
+const importCSV = async () => {
+  if (!selectedCSVFile.value) return
+  
+  isImporting.value = true
+  importError.value = ''
+  importResults.value = null
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', selectedCSVFile.value)
+    
+    const result = await assetsStore.bulkImportAssets(formData)
+    
+    importResults.value = result
+    
+    // If successful import, refresh the assets list
+    if (result.success_count > 0) {
+      await loadAssets()
+      await assetsStore.fetchAssetStats()
+    }
+    
+    // Clear file if all successful
+    if (result.error_count === 0) {
+      clearCSVFile()
+    }
+  } catch (error) {
+    console.error('Import failed:', error)
+    if (error.response?.data?.error) {
+      importError.value = error.response.data.error
+    } else if (error.response?.data?.errors) {
+      importResults.value = error.response.data
+    } else {
+      importError.value = 'Failed to import CSV file. Please check the file format and try again.'
+    }
+  } finally {
+    isImporting.value = false
+  }
+}
+
 const getStatusTextClass = (status) => {
   const classes = {
     active: 'text-success',
@@ -736,7 +1045,7 @@ onMounted(async () => {
 }
 
 .v-data-table :deep(.v-data-table__th) {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.875rem;
   padding: 8px 12px;
 }
@@ -748,6 +1057,49 @@ onMounted(async () => {
 /* Make the vehicle info column more compact */
 .v-data-table :deep(.v-data-table__td:nth-child(2)) {
   line-height: 1.3;
+}
+
+/* Column alignments */
+/* Type column (4th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(4)),
+.v-data-table :deep(.v-data-table__th:nth-child(4)) {
+  text-align: center !important;
+}
+
+/* License column (5th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(5)),
+.v-data-table :deep(.v-data-table__th:nth-child(5)) {
+  text-align: center !important;
+}
+
+/* Department column (6th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(6)),
+.v-data-table :deep(.v-data-table__th:nth-child(6)) {
+  text-align: center !important;
+}
+
+/* Status column (7th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(7)),
+.v-data-table :deep(.v-data-table__th:nth-child(7)) {
+  text-align: center !important;
+}
+
+/* Odometer column (8th column) - right aligned */
+.v-data-table :deep(.v-data-table__td:nth-child(8)),
+.v-data-table :deep(.v-data-table__th:nth-child(8)) {
+  text-align: right !important;
+}
+
+/* Docs column (9th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(9)),
+.v-data-table :deep(.v-data-table__th:nth-child(9)) {
+  text-align: center !important;
+}
+
+/* Actions column (10th column) */
+.v-data-table :deep(.v-data-table__td:nth-child(10)),
+.v-data-table :deep(.v-data-table__th:nth-child(10)) {
+  text-align: center !important;
 }
 
 /* Statistics cards styling */
@@ -784,5 +1136,46 @@ onMounted(async () => {
 
 .table-section :deep(.v-data-table) {
   background-color: transparent;
+}
+
+.import-zone {
+  border: 2px dashed #e0e0e0;
+  background-color: #fafafa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.import-zone:hover {
+  border-color: #1976d2;
+  background-color: #f5f5f5;
+}
+
+.import-zone--active {
+  border-color: #1976d2;
+  background-color: #e3f2fd;
+}
+
+.thumbnail-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.asset-thumbnail {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.no-image-placeholder {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
 }
 </style>

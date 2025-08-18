@@ -5,6 +5,10 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from decimal import Decimal
 from datetime import date, datetime
 import uuid
+import os
+import tempfile
+from PIL import Image
+import io
 
 from .models import Asset, AssetDocument
 
@@ -348,3 +352,209 @@ class AssetDocumentModelTestCase(TestCase):
         self.assertEqual(asset_documents.count(), 2)
         self.assertIn(doc1, asset_documents)
         self.assertIn(doc2, asset_documents)
+
+
+class AssetImageTestCase(TestCase):
+    """Test cases for Asset image functionality"""
+    
+    def setUp(self):
+        """Set up test data"""
+        self.asset = Asset.objects.create(
+            vehicle_type='truck',
+            make='Ford',
+            model='F-150',
+            year=2022
+        )
+    
+    def create_test_image(self, filename='test_image.jpg', format='JPEG', size=(1200, 900), color='red'):
+        """Create a test image file"""
+        image = Image.new('RGB', size, color)
+        image_io = io.BytesIO()
+        image.save(image_io, format=format)
+        image_io.seek(0)
+        
+        return SimpleUploadedFile(
+            filename,
+            image_io.read(),
+            content_type=f'image/{format.lower()}'
+        )
+    
+    def test_asset_image_upload(self):
+        """Test uploading an image to an asset"""
+        test_image = self.create_test_image()
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        self.assertTrue(self.asset.image)
+        self.assertTrue(self.asset.image.name.startswith('assets/images/'))
+        self.assertIn('_main', self.asset.image.name)
+        self.assertTrue(self.asset.image.name.endswith('.jpg'))
+    
+    def test_asset_thumbnail_generation(self):
+        """Test that thumbnail is automatically generated"""
+        test_image = self.create_test_image(size=(1600, 1200))
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Thumbnail should be generated automatically
+        self.assertTrue(self.asset.thumbnail)
+        self.assertTrue(self.asset.thumbnail.name.startswith('assets/images/thumbnails/'))
+        self.assertIn('_thumb', self.asset.thumbnail.name)
+        self.assertTrue(self.asset.thumbnail.name.endswith('.jpg'))
+    
+    def test_image_resizing(self):
+        """Test that large images are resized to max 800x600"""
+        # Create a large image
+        test_image = self.create_test_image(size=(2000, 1500))
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Open the saved image and check dimensions
+        with Image.open(self.asset.image.path) as img:
+            width, height = img.size
+            # Should be resized to fit within 800x600 while maintaining aspect ratio
+            self.assertLessEqual(width, 800)
+            self.assertLessEqual(height, 600)
+            # Aspect ratio should be maintained (2000:1500 = 4:3)
+            self.assertAlmostEqual(width / height, 4/3, places=1)
+    
+    def test_thumbnail_size(self):
+        """Test that thumbnail is exactly 150x150"""
+        test_image = self.create_test_image(size=(1600, 800))  # Wide image
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Check thumbnail dimensions
+        with Image.open(self.asset.thumbnail.path) as thumb:
+            width, height = thumb.size
+            self.assertEqual(width, 150)
+            self.assertEqual(height, 150)
+    
+    def test_image_format_conversion(self):
+        """Test that images are converted to JPEG"""
+        # Create a PNG image
+        test_image = self.create_test_image(filename='test.png', format='PNG')
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Both main image and thumbnail should be JPEG
+        with Image.open(self.asset.image.path) as img:
+            self.assertEqual(img.format, 'JPEG')
+        
+        with Image.open(self.asset.thumbnail.path) as thumb:
+            self.assertEqual(thumb.format, 'JPEG')
+    
+    def test_image_cleanup_on_delete(self):
+        """Test that images are cleaned up when asset is deleted"""
+        test_image = self.create_test_image()
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Store file paths
+        image_path = self.asset.image.path
+        thumbnail_path = self.asset.thumbnail.path
+        
+        # Files should exist
+        self.assertTrue(os.path.exists(image_path))
+        self.assertTrue(os.path.exists(thumbnail_path))
+        
+        # Delete the asset
+        self.asset.delete()
+        
+        # Files should be cleaned up
+        self.assertFalse(os.path.exists(image_path))
+        self.assertFalse(os.path.exists(thumbnail_path))
+    
+    def test_image_replacement(self):
+        """Test replacing an existing image"""
+        # Upload first image
+        first_image = self.create_test_image(color='red')
+        self.asset.image = first_image
+        self.asset.save()
+        
+        first_image_name = self.asset.image.name
+        first_thumbnail_name = self.asset.thumbnail.name
+        
+        # Replace with second image
+        second_image = self.create_test_image(color='blue')
+        self.asset.image = second_image
+        self.asset.save()
+        
+        # New image names should be different
+        self.assertNotEqual(self.asset.image.name, first_image_name)
+        self.assertNotEqual(self.asset.thumbnail.name, first_thumbnail_name)
+        
+        # New files should exist
+        self.assertTrue(os.path.exists(self.asset.image.path))
+        self.assertTrue(os.path.exists(self.asset.thumbnail.path))
+    
+    def test_no_image_upload(self):
+        """Test asset without image"""
+        # Asset should work fine without image
+        self.assertFalse(self.asset.image)
+        self.assertFalse(self.asset.thumbnail)
+    
+    def test_small_image_not_upscaled(self):
+        """Test that small images are not upscaled"""
+        # Create a small image
+        test_image = self.create_test_image(size=(400, 300))
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Image should keep original size since it's already smaller than max
+        with Image.open(self.asset.image.path) as img:
+            width, height = img.size
+            self.assertEqual(width, 400)
+            self.assertEqual(height, 300)
+    
+    def test_square_image_handling(self):
+        """Test handling of square images"""
+        test_image = self.create_test_image(size=(1000, 1000))
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Main image should be resized to 600x600 (to fit within 800x600)
+        with Image.open(self.asset.image.path) as img:
+            width, height = img.size
+            self.assertEqual(width, 600)
+            self.assertEqual(height, 600)
+        
+        # Thumbnail should be 150x150
+        with Image.open(self.asset.thumbnail.path) as thumb:
+            width, height = thumb.size
+            self.assertEqual(width, 150)
+            self.assertEqual(height, 150)
+    
+    def test_very_wide_image_handling(self):
+        """Test handling of very wide images"""
+        test_image = self.create_test_image(size=(2400, 600))  # 4:1 aspect ratio
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Main image should be resized to 800x200 (maintaining aspect ratio)
+        with Image.open(self.asset.image.path) as img:
+            width, height = img.size
+            self.assertEqual(width, 800)
+            self.assertEqual(height, 200)
+    
+    def test_very_tall_image_handling(self):
+        """Test handling of very tall images"""
+        test_image = self.create_test_image(size=(600, 2400))  # 1:4 aspect ratio
+        
+        self.asset.image = test_image
+        self.asset.save()
+        
+        # Main image should be resized to 150x600 (maintaining aspect ratio)
+        with Image.open(self.asset.image.path) as img:
+            width, height = img.size
+            self.assertEqual(width, 150)
+            self.assertEqual(height, 600)

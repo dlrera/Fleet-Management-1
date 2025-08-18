@@ -2,6 +2,7 @@
 Django settings for backend project.
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -12,10 +13,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6%1_6w0a29=!_1ih4brr@7js9*cqd!8j0_iiaj@y*db14k43bk'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-6%1_6w0a29=!_1ih4brr@7js9*cqd!8j0_iiaj@y*db14k43bk')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
@@ -39,6 +40,8 @@ INSTALLED_APPS = [
     # Local apps
     'authentication',
     'assets',
+    'locations',
+    'drivers',
 ]
 
 MIDDLEWARE = [
@@ -125,6 +128,34 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# File upload settings
+MAX_UPLOAD_SIZE = 10485760  # 10MB
+ALLOWED_DOCUMENT_TYPES = [
+    'application/pdf',
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/csv',
+]
+
+# File upload magic numbers for validation
+FILE_UPLOAD_MAGIC_NUMBERS = {
+    'pdf': [b'%PDF'],
+    'jpeg': [b'\xff\xd8\xff'],
+    'png': [b'\x89PNG\r\n\x1a\n'],
+    'docx': [b'PK\x03\x04'],
+    'xlsx': [b'PK\x03\x04'],
+    'csv': [b''],  # CSV files don't have magic numbers
+}
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -133,11 +164,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'authentication.authentication.CookieTokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
@@ -165,7 +196,31 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:3002',
 ]
 
-# For development, we can also disable CSRF for API endpoints
-# In production, this should be properly configured
-CSRF_COOKIE_SECURE = False
+# Security settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+# Production security (enabled via environment variables)
+SECURE_SSL_REDIRECT = os.environ.get('DJANGO_SECURE_SSL_REDIRECT', 'False').lower() == 'true'
+SECURE_HSTS_SECONDS = int(os.environ.get('DJANGO_SECURE_HSTS_SECONDS', '0'))
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get('DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS', 'False').lower() == 'true'
+SECURE_HSTS_PRELOAD = os.environ.get('DJANGO_SECURE_HSTS_PRELOAD', 'False').lower() == 'true'
+
+# Cookie security
+SESSION_COOKIE_SECURE = os.environ.get('DJANGO_SESSION_COOKIE_SECURE', 'False').lower() == 'true'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
+# CSRF settings
+CSRF_COOKIE_SECURE = os.environ.get('DJANGO_CSRF_COOKIE_SECURE', 'False').lower() == 'true'
+CSRF_COOKIE_HTTPONLY = True
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Rate limiting configuration (to be implemented with django-ratelimit)
+RATELIMIT_ENABLE = os.environ.get('DJANGO_RATELIMIT_ENABLE', 'True').lower() == 'true'
+RATELIMIT_USE_CACHE = 'default'
+
+# Authentication rate limits
+AUTH_LOGIN_RATE_LIMIT = '5/5m'  # 5 attempts per 5 minutes
+AUTH_REGISTER_RATE_LIMIT = '3/h'  # 3 registrations per hour

@@ -39,6 +39,38 @@ const routes = [
     component: () => import('../views/Assets/AssetForm.vue'),
     meta: { requiresAuth: true },
     props: true
+  },
+  {
+    path: '/locations',
+    name: 'LocationMap',
+    component: () => import('../views/Locations/LocationMap.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/drivers',
+    name: 'DriversList',
+    component: () => import('../views/Drivers/DriversList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/drivers/create',
+    name: 'DriverCreate',
+    component: () => import('../views/Drivers/DriverForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/drivers/:id',
+    name: 'DriverDetail',
+    component: () => import('../views/Drivers/DriverDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/drivers/:id/edit',
+    name: 'DriverEdit',
+    component: () => import('../views/Drivers/DriverForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
   }
 ]
 

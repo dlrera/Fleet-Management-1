@@ -16,10 +16,23 @@ def login_view(request):
         user = serializer.validated_data['user']
         login(request, user)
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data
+        
+        response = Response({
+            'user': UserSerializer(user).data,
+            'message': 'Login successful'
         })
+        
+        # Set httpOnly cookie for token
+        response.set_cookie(
+            'auth_token',
+            token.key,
+            max_age=86400 * 7,  # 7 days
+            httponly=True,
+            secure=request.is_secure(),
+            samesite='Lax'
+        )
+        
+        return response
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -30,10 +43,23 @@ def register_view(request):
     if serializer.is_valid():
         user = serializer.save()
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': UserSerializer(user).data
+        
+        response = Response({
+            'user': UserSerializer(user).data,
+            'message': 'Registration successful'
         }, status=status.HTTP_201_CREATED)
+        
+        # Set httpOnly cookie for token
+        response.set_cookie(
+            'auth_token',
+            token.key,
+            max_age=86400 * 7,  # 7 days
+            httponly=True,
+            secure=request.is_secure(),
+            samesite='Lax'
+        )
+        
+        return response
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -43,7 +69,12 @@ def logout_view(request):
     if request.user.auth_token:
         request.user.auth_token.delete()
     logout(request)
-    return Response({'detail': 'Successfully logged out'})
+    
+    response = Response({'detail': 'Successfully logged out'})
+    # Clear the auth cookie
+    response.delete_cookie('auth_token')
+    
+    return response
 
 
 @api_view(['GET'])

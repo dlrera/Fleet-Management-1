@@ -54,7 +54,16 @@ export const assetsAPI = {
   uploadDocument: (id, data) => api.post(`/assets/${id}/upload_document/`, data, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
+  uploadImage: (id, data) => api.post(`/assets/${id}/upload_image/`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   getStats: () => api.get('/assets/stats/'),
+  bulkImport: (data) => api.post('/assets/bulk_import/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/assets/download_template/', {
+    responseType: 'text'
+  }),
 }
 
 export const documentsAPI = {
@@ -62,6 +71,90 @@ export const documentsAPI = {
   getDocument: (id) => api.get(`/documents/${id}/`),
   updateDocument: (id, data) => api.put(`/documents/${id}/`, data),
   deleteDocument: (id) => api.delete(`/documents/${id}/`),
+}
+
+export const locationsAPI = {
+  // Location updates endpoints
+  getLocationUpdates: (params = {}) => api.get('/locations/updates/', { params }),
+  getLocationUpdate: (id) => api.get(`/locations/updates/${id}/`),
+  createLocationUpdate: (data) => api.post('/locations/updates/', data),
+  updateLocationUpdate: (id, data) => api.put(`/locations/updates/${id}/`, data),
+  deleteLocationUpdate: (id) => api.delete(`/locations/updates/${id}/`),
+  
+  // Specialized location endpoints
+  getLatestLocations: (params = {}) => api.get('/locations/updates/latest/', { params }),
+  createManualEntry: (data) => api.post('/locations/updates/manual_entry/', data),
+  bulkCreateLocations: (data) => api.post('/locations/updates/bulk_create/', data),
+  getAssetHistory: (assetId, params = {}) => api.get(`/locations/updates/asset/${assetId}/`, { params }),
+  getLocationStats: () => api.get('/locations/updates/stats/'),
+  
+  // Location zones endpoints
+  getLocationZones: (params = {}) => api.get('/locations/zones/', { params }),
+  getLocationZone: (id) => api.get(`/locations/zones/${id}/`),
+  createLocationZone: (data) => api.post('/locations/zones/', data),
+  updateLocationZone: (id, data) => api.put(`/locations/zones/${id}/`, data),
+  deleteLocationZone: (id) => api.delete(`/locations/zones/${id}/`),
+  getAssetsInZone: (zoneId) => api.get(`/locations/zones/${zoneId}/assets_in_zone/`),
+  checkPointInZone: (zoneId, data) => api.post(`/locations/zones/${zoneId}/check_point/`, data),
+  
+  // Current locations endpoints
+  getCurrentLocations: (params = {}) => api.get('/locations/current/', { params }),
+  getCurrentLocation: (id) => api.get(`/locations/current/${id}/`),
+  getMapData: (params = {}) => api.get('/locations/current/map_data/', { params }),
+}
+
+export const driversAPI = {
+  // Driver CRUD endpoints
+  getDrivers: (params = {}) => api.get('/drivers/drivers/', { params }),
+  getDriver: (id) => api.get(`/drivers/drivers/${id}/`),
+  createDriver: (data) => api.post('/drivers/drivers/', data),
+  updateDriver: (id, data) => api.put(`/drivers/drivers/${id}/`, data),
+  partialUpdateDriver: (id, data) => api.patch(`/drivers/drivers/${id}/`, data),
+  deleteDriver: (id) => api.delete(`/drivers/drivers/${id}/`),
+  
+  // Driver photo management
+  uploadPhoto: (id, data) => api.post(`/drivers/drivers/${id}/upload_photo/`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  
+  // Driver certifications
+  getDriverCertifications: (driverId) => api.get(`/drivers/drivers/${driverId}/certifications/`),
+  addDriverCertification: (driverId, data) => api.post(`/drivers/drivers/${driverId}/add_certification/`, data),
+  
+  // Driver asset assignments
+  getDriverAssignments: (driverId) => api.get(`/drivers/drivers/${driverId}/assignments/`),
+  assignAsset: (driverId, data) => api.post(`/drivers/drivers/${driverId}/assign_asset/`, data),
+  unassignAsset: (driverId, data) => api.post(`/drivers/drivers/${driverId}/unassign_asset/`, data),
+  
+  // Driver violations
+  getDriverViolations: (driverId) => api.get(`/drivers/drivers/${driverId}/violations/`),
+  
+  // Driver statistics and reports
+  getStats: () => api.get('/drivers/drivers/stats/'),
+  getExpirationAlerts: (params = {}) => api.get('/drivers/drivers/expiration_alerts/', { params }),
+  getAvailableDrivers: () => api.get('/drivers/drivers/available_drivers/'),
+  
+  // Certification management (standalone)
+  getCertifications: (params = {}) => api.get('/drivers/certifications/', { params }),
+  getCertification: (id) => api.get(`/drivers/certifications/${id}/`),
+  createCertification: (data) => api.post('/drivers/certifications/', data),
+  updateCertification: (id, data) => api.put(`/drivers/certifications/${id}/`, data),
+  deleteCertification: (id) => api.delete(`/drivers/certifications/${id}/`),
+  
+  // Assignment management (standalone)
+  getAssignments: (params = {}) => api.get('/drivers/assignments/', { params }),
+  getAssignment: (id) => api.get(`/drivers/assignments/${id}/`),
+  createAssignment: (data) => api.post('/drivers/assignments/', data),
+  updateAssignment: (id, data) => api.put(`/drivers/assignments/${id}/`, data),
+  deleteAssignment: (id) => api.delete(`/drivers/assignments/${id}/`),
+  getCurrentAssignments: () => api.get('/drivers/assignments/current_assignments/'),
+  
+  // Violation management (standalone)
+  getViolations: (params = {}) => api.get('/drivers/violations/', { params }),
+  getViolation: (id) => api.get(`/drivers/violations/${id}/`),
+  createViolation: (data) => api.post('/drivers/violations/', data),
+  updateViolation: (id, data) => api.put(`/drivers/violations/${id}/`, data),
+  deleteViolation: (id) => api.delete(`/drivers/violations/${id}/`),
 }
 
 export default api

@@ -33,6 +33,7 @@ export const useAssetsStore = defineStore('assets', {
     isUpdating: false,
     isDeleting: false,
     isUploadingDocument: false,
+    isUploadingImage: false,
     
     // Statistics
     assetStats: {
@@ -47,6 +48,7 @@ export const useAssetsStore = defineStore('assets', {
     error: null,
     assetError: null,
     documentError: null,
+    imageError: null,
   }),
 
   getters: {
@@ -301,6 +303,37 @@ export const useAssetsStore = defineStore('assets', {
       }
     },
 
+    async uploadImage(assetId, imageData) {
+      this.isUploadingImage = true
+      this.imageError = null
+      
+      try {
+        const response = await assetsAPI.uploadImage(assetId, imageData)
+        
+        // Update current asset if it's the same
+        if (this.currentAsset?.id === assetId) {
+          this.currentAsset.image = response.data.image
+          this.currentAsset.thumbnail = response.data.thumbnail
+        }
+        
+        // Update asset in assets list
+        const assetIndex = this.assets.findIndex(asset => asset.id === assetId)
+        if (assetIndex !== -1) {
+          this.assets[assetIndex].thumbnail = response.data.thumbnail
+        }
+        
+        this.$emit?.('image:uploaded', response.data)
+        
+        return response.data
+      } catch (error) {
+        this.imageError = error.response?.data?.error || 'Failed to upload image'
+        this.$emit?.('image:error', this.imageError)
+        throw error
+      } finally {
+        this.isUploadingImage = false
+      }
+    },
+
     // Statistics actions
     async fetchAssetStats() {
       try {
@@ -377,11 +410,44 @@ export const useAssetsStore = defineStore('assets', {
       this.error = null
       this.assetError = null
       this.documentError = null
+      this.imageError = null
     },
 
     clearCurrentAsset() {
       this.currentAsset = null
       this.assetDocuments = []
+    },
+
+    // CSV Import/Export actions
+    async bulkImportAssets(formData) {
+      try {
+        const response = await assetsAPI.bulkImport(formData)
+        
+        // Refresh assets list after successful import
+        if (response.data.success_count > 0) {
+          await this.fetchAssets()
+        }
+        
+        this.$emit?.('assets:imported', response.data)
+        
+        return response.data
+      } catch (error) {
+        console.error('Failed to import assets:', error)
+        throw error
+      }
+    },
+
+    async downloadCSVTemplate() {
+      try {
+        const response = await assetsAPI.downloadTemplate()
+        
+        this.$emit?.('template:downloaded')
+        
+        return response
+      } catch (error) {
+        console.error('Failed to download template:', error)
+        throw error
+      }
     },
 
     // Event emission helper (for pure component testing)

@@ -40,6 +40,22 @@
             color="primary"
             style="color: white !important;"
           ></v-list-item>
+          
+          <v-list-item
+            prepend-icon="mdi-account-group"
+            title="Drivers"
+            to="/drivers"
+            color="primary"
+            style="color: white !important;"
+          ></v-list-item>
+          
+          <v-list-item
+            prepend-icon="mdi-map"
+            title="Locations"
+            to="/locations"
+            color="primary"
+            style="color: white !important;"
+          ></v-list-item>
         </v-list>
       </v-navigation-drawer>
 
