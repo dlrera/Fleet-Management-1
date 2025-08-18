@@ -140,8 +140,11 @@ class LocationZone(models.Model):
         help_text="Zone center longitude"
     )
     radius = models.FloatField(
-        validators=[MinValueValidator(1.0)],
-        help_text="Zone radius in meters"
+        validators=[
+            MinValueValidator(100.0),
+            MaxValueValidator(50000.0)
+        ],
+        help_text="Zone radius in meters (100m - 50km)"
     )
     
     # Status and metadata

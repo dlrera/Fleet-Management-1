@@ -2,15 +2,26 @@
   <div class="location-map-container">
     <!-- Header with controls -->
     <div class="map-header">
-      <div class="d-flex align-center justify-space-between">
-        <div>
+      <div class="header-content">
+        <div class="header-text">
           <h2 class="text-h5 mb-1">Fleet Location Map</h2>
           <p class="text-body-2 text-medium-emphasis">
             Real-time vehicle tracking and location management
           </p>
         </div>
         
-        <div class="d-flex align-center gap-3">
+        <div class="header-controls">
+          <!-- Zone Management button -->
+          <v-btn
+            variant="outlined"
+            color="primary"
+            prepend-icon="mdi-map-marker-radius"
+            :to="{ name: 'ZoneManagement' }"
+            size="default"
+          >
+            Manage Zones
+          </v-btn>
+          
           <!-- Time filter -->
           <v-select
             v-model="timeFilter"
@@ -18,7 +29,8 @@
             label="Show locations from"
             density="compact"
             variant="outlined"
-            style="min-width: 200px"
+            hide-details
+            style="width: 180px"
             @update:model-value="handleTimeFilterChange"
           />
           
@@ -28,6 +40,7 @@
             variant="outlined"
             :loading="locationsStore.isLoadingMap"
             @click="refreshMapData"
+            size="default"
           >
             <v-icon>mdi-refresh</v-icon>
           </v-btn>
@@ -37,6 +50,7 @@
             color="primary"
             prepend-icon="mdi-map-marker-plus"
             @click="showManualEntryDialog = true"
+            size="default"
           >
             Add Location
           </v-btn>
@@ -471,6 +485,28 @@ watch(mapData, updateMapMarkers)
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-text {
+  flex-shrink: 0;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-controls .v-btn,
+.header-controls .v-select {
+  height: 40px;
+}
+
 .stats-card {
   background: white;
   padding: 16px 20px;
@@ -594,14 +630,6 @@ watch(mapData, updateMapMarkers)
   min-width: 100px;
 }
 
-.gap-3 {
-  gap: 12px;
-}
-
-.gap-4 {
-  gap: 16px;
-}
-
 /* Leaflet marker customization */
 :deep(.custom-marker) {
   background: transparent !important;
@@ -609,6 +637,19 @@ watch(mapData, updateMapMarkers)
 }
 
 /* Responsive adjustments */
+@media (max-width: 1024px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .header-controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 768px) {
   .location-map-container {
     padding: 16px;
@@ -618,10 +659,14 @@ watch(mapData, updateMapMarkers)
     padding: 16px;
   }
   
-  .d-flex.align-center.justify-space-between {
+  .header-controls {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .header-controls .v-select,
+  .header-controls .v-btn {
+    width: 100%;
   }
   
   .map-legend {

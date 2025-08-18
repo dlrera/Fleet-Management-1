@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
 from assets.models import Asset
+from authentication.permissions import GranularLocationPermission, GranularZonePermission
 
 from .models import LocationUpdate, LocationZone, AssetLocationSummary
 from .serializers import (
@@ -25,7 +26,7 @@ class LocationUpdateViewSet(viewsets.ModelViewSet):
     """
     queryset = LocationUpdate.objects.select_related('asset').all()
     serializer_class = LocationUpdateSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [GranularLocationPermission]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     
     # Filtering options
@@ -189,7 +190,7 @@ class LocationZoneViewSet(viewsets.ModelViewSet):
     """
     queryset = LocationZone.objects.all()
     serializer_class = LocationZoneSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [GranularZonePermission]
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     
     filterset_fields = ['zone_type', 'is_active']

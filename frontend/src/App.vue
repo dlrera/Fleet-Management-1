@@ -123,6 +123,24 @@
         <router-view />
       </v-main>
     </template>
+    
+    <!-- Global Snackbar -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="top right"
+    >
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          @click="snackbar.show = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -130,6 +148,7 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
+// import { useSnackbar } from './composables/useSnackbar'
 
 export default {
   name: 'App',
@@ -137,6 +156,8 @@ export default {
     const authStore = useAuthStore()
     const router = useRouter()
     const drawer = ref(true)
+    // const { snackbar } = useSnackbar()
+    const snackbar = ref({ show: false, message: '', color: 'success', timeout: 3000 })
 
     const handleLogout = async () => {
       await authStore.logout()
@@ -169,7 +190,8 @@ export default {
       drawer,
       router,
       handleLogout,
-      getRoleColor
+      getRoleColor,
+      snackbar
     }
   }
 }
