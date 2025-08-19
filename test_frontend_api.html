@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Zone API</title>
+</head>
+<body>
+    <h1>Zone Management API Test</h1>
+    <button onclick="testZones()">Test Zone Loading</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testZones() {
+            const resultDiv = document.getElementById('result');
+            
+            // First login
+            const loginResponse = await fetch('http://localhost:8000/api/auth/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: 'admin',
+                    password: 'admin123'
+                })
+            });
+            
+            const loginData = await loginResponse.json();
+            const token = loginData.token;
+            
+            resultDiv.innerHTML += '<p>✓ Logged in successfully</p>';
+            
+            // Now fetch zones
+            const zonesResponse = await fetch('http://localhost:8000/api/locations/zones/', {
+                headers: {
+                    'Authorization': `Token ${token}`
+                }
+            });
+            
+            const zonesData = await zonesResponse.json();
+            const zones = zonesData.results || zonesData;
+            
+            resultDiv.innerHTML += `<p>✓ Found ${zones.length} zones</p>`;
+            resultDiv.innerHTML += '<h3>Zones:</h3><ul>';
+            
+            zones.forEach(zone => {
+                resultDiv.innerHTML += `<li>${zone.name} (${zone.zone_type}) - Active: ${zone.is_active}</li>`;
+            });
+            
+            resultDiv.innerHTML += '</ul>';
+            
+            // Test if the frontend path works
+            const frontendTest = await fetch('http://localhost:3000/api/locations/zones/', {
+                headers: {
+                    'Authorization': `Token ${token}`
+                }
+            });
+            
+            if (frontendTest.ok) {
+                resultDiv.innerHTML += '<p>✓ Frontend proxy working</p>';
+            } else {
+                resultDiv.innerHTML += `<p>✗ Frontend proxy issue: ${frontendTest.status}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

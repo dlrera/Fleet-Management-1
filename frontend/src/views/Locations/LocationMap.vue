@@ -1,85 +1,115 @@
 <template>
-  <div class="location-map-container">
-    <!-- Header with controls -->
-    <div class="map-header">
-      <div class="header-content">
-        <div class="header-text">
-          <h2 class="text-h5 mb-1">Fleet Location Map</h2>
-          <p class="text-body-2 text-medium-emphasis">
-            Real-time vehicle tracking and location management
-          </p>
-        </div>
+  <v-container fluid>
+    <!-- Page Header -->
+    <v-row class="mb-3">
+      <v-col cols="12" md="8">
+        <h1 class="text-h5 font-weight-medium mb-1">
+          Fleet Location Map
+        </h1>
+        <p class="text-body-2 text-medium-emphasis">
+          Real-time vehicle tracking and location management
+        </p>
+      </v-col>
         
-        <div class="header-controls">
-          <!-- Zone Management button -->
-          <v-btn
-            variant="outlined"
-            color="primary"
-            prepend-icon="mdi-map-marker-radius"
-            :to="{ name: 'ZoneManagement' }"
-            size="default"
-          >
-            Manage Zones
-          </v-btn>
-          
-          <!-- Time filter -->
-          <v-select
-            v-model="timeFilter"
-            :items="timeFilterOptions"
-            label="Show locations from"
-            density="compact"
-            variant="outlined"
-            hide-details
-            style="width: 180px"
-            @update:model-value="handleTimeFilterChange"
-          />
-          
-          <!-- Refresh button -->
-          <v-btn
-            icon
-            variant="outlined"
-            :loading="locationsStore.isLoadingMap"
-            @click="refreshMapData"
-            size="default"
-          >
-            <v-icon>mdi-refresh</v-icon>
-          </v-btn>
-          
-          <!-- Manual entry button -->
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-map-marker-plus"
-            @click="showManualEntryDialog = true"
-            size="default"
-          >
-            Add Location
-          </v-btn>
-        </div>
-      </div>
-    </div>
+      <v-col cols="12" md="4" class="text-md-right">
+        <v-btn
+          color="primary"
+          size="small"
+          prepend-icon="mdi-map-marker-plus"
+          @click="showManualEntryDialog = true"
+          class="mr-2"
+        >
+          Add Location
+        </v-btn>
+        <v-btn
+          variant="outlined"
+          size="small"
+          prepend-icon="mdi-map-marker-radius"
+          :to="{ name: 'ZoneManagement' }"
+        >
+          Manage Zones
+        </v-btn>
+      </v-col>
+    </v-row>
 
-    <!-- Map stats cards -->
-    <div class="d-flex gap-4 mb-4">
-      <div class="stats-card">
-        <div class="stats-value">{{ mapData?.assets?.length || 0 }}</div>
-        <div class="stats-label">Assets Tracked</div>
-      </div>
+    <!-- Statistics Cards -->
+    <v-row class="mb-4">
+      <v-col cols="12" sm="6" md="3">
+        <div class="stat-card pa-3">
+          <div class="d-flex align-center">
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-medium">
+                {{ mapData?.assets?.length || 0 }}
+              </div>
+              <div class="text-caption text-medium-emphasis">Assets Tracked</div>
+            </div>
+            <v-icon size="24" class="text-medium-emphasis">mdi-truck</v-icon>
+          </div>
+        </div>
+      </v-col>
       
-      <div class="stats-card">
-        <div class="stats-value">{{ locationStats.tracking_coverage }}%</div>
-        <div class="stats-label">Coverage</div>
-      </div>
+      <v-col cols="12" sm="6" md="3">
+        <div class="stat-card pa-3">
+          <div class="d-flex align-center">
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-medium d-flex align-center">
+                {{ locationStats.tracking_coverage }}%
+                <v-tooltip location="top">
+                  <template v-slot:activator="{ props }">
+                    <v-icon 
+                      v-bind="props"
+                      size="small"
+                      class="ml-1"
+                      style="cursor: help; opacity: 0.7;"
+                    >
+                      mdi-information-outline
+                    </v-icon>
+                  </template>
+                  <div style="max-width: 300px;">
+                    <strong>Coverage Calculation</strong><br>
+                    Percentage of fleet assets that have reported their location in the last 24 hours.<br><br>
+                    Formula: (Assets with recent updates ÷ Total active assets) × 100
+                  </div>
+                </v-tooltip>
+              </div>
+              <div class="text-caption text-medium-emphasis">Coverage</div>
+            </div>
+            <v-icon size="24" class="text-medium-emphasis">mdi-radar</v-icon>
+          </div>
+        </div>
+      </v-col>
       
-      <div class="stats-card">
-        <div class="stats-value">{{ mapData?.zones?.length || 0 }}</div>
-        <div class="stats-label">Active Zones</div>
-      </div>
+      <v-col cols="12" sm="6" md="3">
+        <div 
+          class="stat-card pa-3 cursor-pointer"
+          @click="$router.push('/locations/zones')"
+        >
+          <div class="d-flex align-center">
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-medium">
+                {{ mapData?.zones?.length || 0 }}
+              </div>
+              <div class="text-caption text-medium-emphasis">Active Zones</div>
+            </div>
+            <v-icon size="24" class="text-medium-emphasis">mdi-map-marker-radius</v-icon>
+          </div>
+        </div>
+      </v-col>
       
-      <div class="stats-card">
-        <div class="stats-value">{{ locationStats.today_updates }}</div>
-        <div class="stats-label">Today's Updates</div>
-      </div>
-    </div>
+      <v-col cols="12" sm="6" md="3">
+        <div class="stat-card pa-3">
+          <div class="d-flex align-center">
+            <div class="flex-grow-1">
+              <div class="text-h6 font-weight-medium">
+                {{ locationStats.today_updates }}
+              </div>
+              <div class="text-caption text-medium-emphasis">Today's Updates</div>
+            </div>
+            <v-icon size="24" class="text-medium-emphasis">mdi-update</v-icon>
+          </div>
+        </div>
+      </v-col>
+    </v-row>
 
     <!-- Map container -->
     <div class="map-wrapper">
@@ -91,8 +121,8 @@
         </div>
       </div>
 
-      <!-- Map legend -->
-      <div class="map-legend">
+      <!-- Map legend (positioned upper-right) -->
+      <div class="map-legend map-legend-top-right">
         <div class="legend-title">Legend</div>
         <div class="legend-item">
           <div class="legend-marker marker-active"></div>
@@ -205,7 +235,7 @@
         @location-added="handleLocationAdded"
       />
     </v-dialog>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
@@ -471,72 +501,38 @@ watch(mapData, updateMapMarkers)
 </script>
 
 <style scoped>
-.location-map-container {
-  padding: 24px;
-  background-color: #F9FAFA;
-  min-height: 100vh;
+/* Statistics cards styling - matching Assets */
+.stat-card {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-surface));
+  transition: all 0.2s ease;
 }
 
-.map-header {
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  margin-bottom: 24px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+.stat-card:hover {
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  background-color: rgba(var(--v-theme-primary), 0.02);
 }
 
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+.stat-card--active {
+  border-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.08);
 }
 
-.header-text {
-  flex-shrink: 0;
+/* Filter section styling - matching Assets */
+.filter-section {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-surface));
 }
 
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-controls .v-btn,
-.header-controls .v-select {
-  height: 40px;
-}
-
-.stats-card {
-  background: white;
-  padding: 16px 20px;
-  border-radius: 8px;
-  text-align: center;
-  min-width: 120px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.stats-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #216093;
-  line-height: 1;
-}
-
-.stats-label {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.map-wrapper {
-  position: relative;
-  background: white;
-  border-radius: 8px;
+/* Table section styling - matching Assets (used for map container) */
+.table-section {
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-surface));
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  position: relative;
 }
 
 .map-container {
@@ -567,6 +563,11 @@ watch(mapData, updateMapMarkers)
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   z-index: 1000;
+}
+
+.map-legend-top-right {
+  left: auto;
+  right: 16px;
 }
 
 .legend-title {
@@ -628,6 +629,10 @@ watch(mapData, updateMapMarkers)
   font-weight: 500;
   color: #666;
   min-width: 100px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 /* Leaflet marker customization */

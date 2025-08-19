@@ -12,7 +12,7 @@
       </v-col>
       <v-col cols="12" md="4" class="text-md-right">
         <v-btn
-          variant="outlined"
+          color="primary"
           size="small"
           prepend-icon="mdi-plus"
           :to="{ name: 'AssetCreate' }"

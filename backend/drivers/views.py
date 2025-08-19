@@ -245,9 +245,202 @@ class DriverViewSet(viewsets.ModelViewSet):
             'message': 'Photo deleted successfully'
         }, status=status.HTTP_200_OK)
     
+    @action(detail=False, methods=['post'])
+    def bulk_import(self, request):
+        """Import multiple drivers from CSV file"""
+        if 'file' not in request.FILES:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        csv_file = request.FILES['file']
+        
+        # Check file type
+        if not csv_file.name.endswith('.csv'):
+            return Response(
+                {'error': 'File must be CSV format'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Check file size (limit to 5MB)
+        if csv_file.size > 5242880:
+            return Response(
+                {'error': 'File size must be less than 5MB'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Parse CSV
+        try:
+            decoded_file = csv_file.read().decode('utf-8')
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+            
+            # Validate required columns
+            required_columns = ['driver_id', 'first_name', 'last_name', 'email']
+            if reader.fieldnames:
+                missing_columns = set(required_columns) - set(reader.fieldnames)
+                if missing_columns:
+                    return Response(
+                        {'error': f'Missing required columns: {", ".join(missing_columns)}'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            
+            # Process each row
+            success_count = 0
+            error_count = 0
+            errors = []
+            
+            with transaction.atomic():
+                for row_num, row in enumerate(reader, start=2):
+                    try:
+                        # Map CSV fields to model fields
+                        driver_data = {
+                            'driver_id': row.get('driver_id', '').strip(),
+                            'first_name': row.get('first_name', '').strip(),
+                            'last_name': row.get('last_name', '').strip(),
+                            'email': row.get('email', '').strip(),
+                            'phone': row.get('phone', '').strip() if row.get('phone') else None,
+                            'license_number': row.get('license_number', '').strip() if row.get('license_number') else None,
+                            'license_type': row.get('license_type', 'regular').strip().lower(),
+                            'license_expiration': row.get('license_expiration', '').strip() if row.get('license_expiration') else None,
+                            'employment_status': row.get('employment_status', 'active').strip().lower(),
+                            'department': row.get('department', '').strip() if row.get('department') else None,
+                            'position': row.get('position', '').strip() if row.get('position') else None,
+                            'date_of_birth': row.get('date_of_birth', '').strip() if row.get('date_of_birth') else None,
+                            'hire_date': row.get('hire_date', '').strip() if row.get('hire_date') else None,
+                            'address': row.get('address', '').strip() if row.get('address') else None,
+                            'city': row.get('city', '').strip() if row.get('city') else None,
+                            'state': row.get('state', '').strip() if row.get('state') else None,
+                            'zip_code': row.get('zip_code', '').strip() if row.get('zip_code') else None,
+                            'notes': row.get('notes', '').strip() if row.get('notes') else None,
+                        }
+                        
+                        # Remove empty values
+                        driver_data = {k: v for k, v in driver_data.items() if v}
+                        
+                        # Convert date fields
+                        for date_field in ['license_expiration', 'date_of_birth', 'hire_date']:
+                            if date_field in driver_data and driver_data[date_field]:
+                                try:
+                                    driver_data[date_field] = datetime.strptime(driver_data[date_field], '%Y-%m-%d').date()
+                                except ValueError:
+                                    try:
+                                        driver_data[date_field] = datetime.strptime(driver_data[date_field], '%m/%d/%Y').date()
+                                    except ValueError:
+                                        del driver_data[date_field]
+                        
+                        # Check if driver already exists
+                        if Driver.objects.filter(driver_id=driver_data['driver_id']).exists():
+                            # Update existing driver
+                            Driver.objects.filter(driver_id=driver_data['driver_id']).update(**driver_data)
+                        else:
+                            # Create new driver
+                            Driver.objects.create(**driver_data)
+                        
+                        success_count += 1
+                        
+                    except Exception as e:
+                        error_count += 1
+                        errors.append(f"Row {row_num}: {str(e)}")
+                        
+                        # If too many errors, abort
+                        if error_count > 10:
+                            transaction.set_rollback(True)
+                            return Response(
+                                {
+                                    'error': 'Too many errors encountered',
+                                    'errors': errors[:10],
+                                    'processed': row_num - 1
+                                },
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+            
+            return Response({
+                'message': f'Import completed: {success_count} drivers imported/updated successfully',
+                'success_count': success_count,
+                'error_count': error_count,
+                'errors': errors[:10] if errors else []
+            })
+            
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to process CSV file: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=False, methods=['get'])
+    def download_template(self, request):
+        """Download CSV template for driver import"""
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="drivers_import_template.csv"'
+        
+        writer = csv.writer(response)
+        # Write header row
+        writer.writerow([
+            'driver_id', 'first_name', 'last_name', 'email', 'phone',
+            'license_number', 'license_type', 'license_expiration',
+            'employment_status', 'department', 'position',
+            'date_of_birth', 'hire_date', 'address', 'city', 'state', 'zip_code', 'notes'
+        ])
+        
+        # Write example row
+        writer.writerow([
+            'DRV001', 'John', 'Doe', 'john.doe@example.com', '555-123-4567',
+            'DL123456789', 'class_b', '2025-12-31',
+            'active', 'Transportation', 'Driver',
+            '1980-01-15', '2020-06-01', '123 Main St', 'Buffalo', 'NY', '14201', 'Example driver'
+        ])
+        
+        return response
+    
+    @action(detail=False, methods=['post'])
+    def bulk_update(self, request):
+        """Bulk update multiple drivers"""
+        driver_ids = request.data.get('driver_ids', [])
+        updates = request.data.get('updates', {})
+        
+        if not driver_ids:
+            return Response(
+                {'error': 'No drivers selected'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not updates:
+            return Response(
+                {'error': 'No updates provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate allowed fields for bulk update
+        allowed_fields = ['employment_status', 'department', 'position']
+        invalid_fields = set(updates.keys()) - set(allowed_fields)
+        if invalid_fields:
+            return Response(
+                {'error': f'Invalid fields for bulk update: {", ".join(invalid_fields)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Perform bulk update
+            updated_count = Driver.objects.filter(id__in=driver_ids).update(**updates)
+            
+            return Response({
+                'message': f'{updated_count} drivers updated successfully',
+                'updated_count': updated_count
+            })
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to update drivers: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
     @action(detail=False, methods=['get'])
     def stats(self, request):
         """Get basic statistics about drivers"""
+        from django.db.models import Exists, OuterRef, Q
+        from .models import DriverAssetAssignment
+        
         total_drivers = Driver.objects.count()
         active_drivers = Driver.objects.filter(employment_status='active').count()
         inactive_drivers = Driver.objects.filter(employment_status='inactive').count()
@@ -260,6 +453,20 @@ class DriverViewSet(viewsets.ModelViewSet):
         expiring_licenses = Driver.objects.filter(
             license_expiration__gte=today,
             license_expiration__lte=thirty_days_from_now
+        ).count()
+        
+        # Count critical alerts (drivers who can't drive but have assignments)
+        active_assignment_subquery = DriverAssetAssignment.objects.filter(
+            driver=OuterRef('pk'),
+            status='active',
+            unassigned_date__isnull=True
+        )
+        
+        drivers_with_critical_alerts = Driver.objects.filter(
+            Exists(active_assignment_subquery)
+        ).filter(
+            Q(employment_status__in=['suspended', 'terminated']) |
+            Q(license_expiration__lt=today)
         ).count()
         
         # License types
@@ -298,7 +505,7 @@ class DriverViewSet(viewsets.ModelViewSet):
             'active_drivers': active_drivers,
             'inactive_drivers': inactive_drivers,
             'suspended_drivers': suspended_drivers,
-            'expired_licenses': expired_licenses,
+            'expired_licenses': drivers_with_critical_alerts,  # Use critical alerts count instead
             'expiring_licenses': expiring_licenses,
             'license_types': license_types,
             'age_ranges': age_ranges

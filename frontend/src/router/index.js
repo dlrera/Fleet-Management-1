@@ -47,6 +47,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/locations/zones',
+    name: 'ZoneManagement',
+    component: () => import('../views/Locations/ZoneManagement.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/drivers',
     name: 'DriversList',
     component: () => import('../views/Drivers/DriversList.vue'),

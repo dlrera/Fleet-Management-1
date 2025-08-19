@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
-from authentication.permissions import AssetPermission
+from authentication.permissions import AssetPermission, GranularAssetPermission
 from django.db.models import Q
 from django.db import transaction
 from django.http import HttpResponse
@@ -21,7 +21,8 @@ from .serializers import (
 
 class AssetViewSet(viewsets.ModelViewSet):
     queryset = Asset.objects.all().prefetch_related('documents')
-    permission_classes = [AssetPermission]
+    # Use granular permissions if available, fallback to role-based
+    permission_classes = [GranularAssetPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['vehicle_type', 'status', 'department', 'year']
     search_fields = ['asset_id', 'make', 'model', 'vin', 'license_plate']

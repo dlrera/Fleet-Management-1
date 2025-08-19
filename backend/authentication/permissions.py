@@ -2,6 +2,13 @@
 Custom permission classes for role-based access control
 """
 from rest_framework import permissions
+from django.contrib.auth.models import User
+try:
+    from .models import Permission as CustomPermission, RoleAssignment
+except ImportError:
+    # Fallback if models aren't available yet
+    CustomPermission = None
+    RoleAssignment = None
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -234,3 +241,181 @@ class DriverPermission(RoleBasedPermission):
             return request.method in permissions.SAFE_METHODS
         
         return False
+
+
+# Granular permission classes using custom Permission model
+class GranularPermission(permissions.BasePermission):
+    """Base class for granular permissions using custom Permission model"""
+    
+    def has_permission(self, request, view):
+        """Check if user has permission for the view"""
+        if not request.user.is_authenticated:
+            return False
+            
+        # Superusers always have permission
+        if request.user.is_superuser:
+            return True
+            
+        # Check custom permissions
+        return self.check_custom_permission(request, view)
+    
+    def check_custom_permission(self, request, view):
+        """Override in subclasses"""
+        return False
+    
+    def get_user_permissions(self, user):
+        """Get all permissions for a user through their roles"""
+        permissions = set()
+        
+        # Check if models are available
+        if RoleAssignment and CustomPermission:
+            # Get role assignments for the user
+            role_assignments = RoleAssignment.objects.filter(
+                user=user,
+                is_active=True
+            ).select_related('role')
+            
+            # Collect permissions from all roles
+            for assignment in role_assignments:
+                role_permissions = CustomPermission.objects.filter(
+                    permissionassignment__role=assignment.role,
+                    permissionassignment__is_active=True
+                ).values_list('name', flat=True)
+                permissions.update(role_permissions)
+        
+        return permissions
+
+
+class GranularAssetPermission(GranularPermission):
+    """Granular permission class for Asset operations"""
+    
+    def check_custom_permission(self, request, view):
+        user_permissions = self.get_user_permissions(request.user)
+        
+        # Map HTTP methods to permission names
+        if request.method == 'GET':
+            return 'assets.view' in user_permissions
+        elif request.method == 'POST':
+            return 'assets.create' in user_permissions
+        elif request.method in ['PUT', 'PATCH']:
+            return 'assets.edit' in user_permissions
+        elif request.method == 'DELETE':
+            return 'assets.delete' in user_permissions
+        
+        return False
+    
+    def has_object_permission(self, request, view, obj):
+        """Check object-level permissions"""
+        if request.user.is_superuser:
+            return True
+            
+        user_permissions = self.get_user_permissions(request.user)
+        
+        # Check department-based scoping
+        if hasattr(obj, 'department') and hasattr(request.user, 'profile'):
+            user_department = getattr(request.user.profile, 'department', None)
+            if user_department and obj.department != user_department:
+                # User can only view assets from other departments
+                if request.method == 'GET':
+                    return 'assets.view_all' in user_permissions
+                return False
+        
+        # Standard object permissions
+        if request.method == 'GET':
+            return 'assets.view' in user_permissions
+        elif request.method in ['PUT', 'PATCH']:
+            return 'assets.edit' in user_permissions
+        elif request.method == 'DELETE':
+            return 'assets.delete' in user_permissions
+        
+        return False
+
+
+class GranularLocationPermission(GranularPermission):
+    """Granular permission class for Location operations"""
+    
+    def check_custom_permission(self, request, view):
+        user_permissions = self.get_user_permissions(request.user)
+        
+        # Location updates require special permission
+        if view.action == 'create' and request.path.endswith('/updates/'):
+            return 'locations.update' in user_permissions
+        
+        if request.method == 'GET':
+            return 'locations.view' in user_permissions
+        elif request.method == 'POST':
+            return 'locations.create' in user_permissions
+        elif request.method in ['PUT', 'PATCH']:
+            return 'locations.edit' in user_permissions
+        elif request.method == 'DELETE':
+            return 'locations.delete' in user_permissions
+        
+        return False
+
+
+class GranularZonePermission(GranularPermission):
+    """Granular permission class for Zone operations"""
+    
+    def check_custom_permission(self, request, view):
+        user_permissions = self.get_user_permissions(request.user)
+        
+        if request.method == 'GET':
+            return 'zones.view' in user_permissions
+        elif request.method == 'POST':
+            return 'zones.create' in user_permissions
+        elif request.method in ['PUT', 'PATCH']:
+            return 'zones.edit' in user_permissions
+        elif request.method == 'DELETE':
+            return 'zones.delete' in user_permissions
+        
+        return False
+
+
+def check_permission(user, permission_name):
+    """Utility function to check if a user has a specific permission"""
+    if not user.is_authenticated:
+        return False
+    
+    if user.is_superuser:
+        return True
+    
+    # Check if models are available
+    if CustomPermission:
+        # Check through role assignments
+        return CustomPermission.objects.filter(
+            permissionassignment__role__roleassignment__user=user,
+            permissionassignment__is_active=True,
+            permissionassignment__role__roleassignment__is_active=True,
+            name=permission_name
+        ).exists()
+    
+    return False
+
+
+def get_user_scopes(user):
+    """Get all scopes assigned to a user"""
+    if not user.is_authenticated:
+        return []
+    
+    if user.is_superuser:
+        return ['global']  # Superusers have global scope
+    
+    scopes = []
+    
+    # Check if models are available
+    if RoleAssignment:
+        # Get scopes through role assignments
+        role_assignments = RoleAssignment.objects.filter(
+            user=user,
+            is_active=True
+        ).select_related('scope')
+        
+        for assignment in role_assignments:
+            if assignment.scope:
+                scopes.append({
+                    'type': assignment.scope.scope_type,
+                    'value': assignment.scope.scope_value,
+                    'name': assignment.scope.name
+                })
+    
+    return scopes

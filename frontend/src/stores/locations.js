@@ -155,7 +155,7 @@ export const useLocationsStore = defineStore('locations', {
       
       try {
         const params = {
-          within_hours: this.filters.within_hours,
+          within_hours: options.within_hours || this.filters.within_hours,
           ...options.params
         }
         

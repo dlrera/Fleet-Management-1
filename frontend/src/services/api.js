@@ -140,6 +140,13 @@ export const driversAPI = {
   getExpirationAlerts: (params = {}) => api.get('/drivers/drivers/expiration_alerts/', { params }),
   getAvailableDrivers: () => api.get('/drivers/drivers/available_drivers/'),
   
+  // Bulk operations
+  bulkImport: (formData) => api.post('/drivers/drivers/bulk_import/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  downloadTemplate: () => api.get('/drivers/drivers/download_template/'),
+  bulkUpdate: (data) => api.post('/drivers/drivers/bulk_update/', data),
+  
   // Certification management (standalone)
   getCertifications: (params = {}) => api.get('/drivers/certifications/', { params }),
   getCertification: (id) => api.get(`/drivers/certifications/${id}/`),

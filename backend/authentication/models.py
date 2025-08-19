@@ -136,7 +136,7 @@ class AuditLog(models.Model):
     
     def save(self, *args, **kwargs):
         """Make audit logs immutable after creation"""
-        if self.pk:
+        if self.pk and AuditLog.objects.filter(pk=self.pk).exists():
             raise ValueError("Audit logs cannot be modified")
         super().save(*args, **kwargs)
 

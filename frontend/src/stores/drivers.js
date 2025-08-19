@@ -38,6 +38,7 @@ export const useDriversStore = defineStore('drivers', {
     isCreating: false,
     isUpdating: false,
     isDeleting: false,
+    isImporting: false,
     isUploadingPhoto: false,
     
     // Statistics
@@ -429,6 +430,67 @@ export const useDriversStore = defineStore('drivers', {
         this.assignmentError = error.response?.data || 'Failed to create assignment'
         this.$emit?.('assignment:error', this.assignmentError)
         throw error
+      }
+    },
+
+    // Bulk operations
+    async importDrivers(file) {
+      this.isImporting = true
+      this.error = null
+      
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        
+        const response = await driversAPI.bulkImport(formData)
+        
+        // Refresh the drivers list
+        await this.fetchDrivers()
+        
+        this.$emit?.('drivers:imported', response.data)
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data || 'Failed to import drivers'
+        this.$emit?.('drivers:error', this.error)
+        throw error
+      } finally {
+        this.isImporting = false
+      }
+    },
+
+    async downloadTemplate() {
+      try {
+        const response = await driversAPI.downloadTemplate()
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data || 'Failed to download template'
+        throw error
+      }
+    },
+
+    async bulkUpdateDrivers(driverIds, updates) {
+      this.isUpdating = true
+      this.error = null
+      
+      try {
+        const response = await driversAPI.bulkUpdate({
+          driver_ids: driverIds,
+          updates: updates
+        })
+        
+        // Refresh the drivers list
+        await this.fetchDrivers()
+        
+        this.$emit?.('drivers:bulkUpdated', response.data)
+        
+        return response.data
+      } catch (error) {
+        this.error = error.response?.data || 'Failed to update drivers'
+        this.$emit?.('drivers:error', this.error)
+        throw error
+      } finally {
+        this.isUpdating = false
       }
     },
 

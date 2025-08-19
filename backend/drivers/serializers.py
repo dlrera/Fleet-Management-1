@@ -163,6 +163,8 @@ class DriverListSerializer(serializers.ModelSerializer):
     active_assignments_count = serializers.SerializerMethodField()
     violations_count = serializers.SerializerMethodField()
     expiring_items_count = serializers.SerializerMethodField()
+    alert_details = serializers.SerializerMethodField()
+    has_critical_alert = serializers.SerializerMethodField()
     
     class Meta:
         model = Driver
@@ -171,7 +173,8 @@ class DriverListSerializer(serializers.ModelSerializer):
             'employment_status', 'employment_status_display', 'department', 'position',
             'license_number', 'license_type', 'license_type_display', 'license_expiration', 
             'license_expires_soon', 'license_is_expired', 'age', 'profile_photo', 'certifications_count',
-            'active_assignments_count', 'violations_count', 'expiring_items_count', 'created_at'
+            'active_assignments_count', 'violations_count', 'expiring_items_count', 'alert_details',
+            'has_critical_alert', 'created_at'
         ]
     
     def get_certifications_count(self, obj):
@@ -196,6 +199,43 @@ class DriverListSerializer(serializers.ModelSerializer):
         ).count()
         count += expiring_certs
         return count
+    
+    def get_alert_details(self, obj):
+        """Get alert details only if driver has assignments but can't drive"""
+        alerts = []
+        active_assignments = obj.asset_assignments.filter(status='active', unassigned_date__isnull=True)
+        
+        # Only generate alerts if driver has active assignments
+        if active_assignments.exists():
+            # Check if driver is suspended or terminated
+            if obj.employment_status in ['suspended', 'terminated']:
+                alerts.append({
+                    'type': 'employment_status',
+                    'severity': 'critical',
+                    'message': f'Driver is {obj.get_employment_status_display()} but has {active_assignments.count()} active vehicle assignment(s)',
+                    'affected_vehicles': list(active_assignments.values_list('asset__asset_id', flat=True))
+                })
+            
+            # Check if license is expired
+            if obj.license_is_expired:
+                alerts.append({
+                    'type': 'license_expired',
+                    'severity': 'critical',
+                    'message': f'License expired on {obj.license_expiration} but driver has {active_assignments.count()} active vehicle assignment(s)',
+                    'affected_vehicles': list(active_assignments.values_list('asset__asset_id', flat=True))
+                })
+        
+        return alerts
+    
+    def get_has_critical_alert(self, obj):
+        """Check if driver has any critical alerts"""
+        active_assignments = obj.asset_assignments.filter(status='active', unassigned_date__isnull=True)
+        
+        if active_assignments.exists():
+            # Has critical alert if driver can't drive but has assignments
+            return (obj.employment_status in ['suspended', 'terminated']) or obj.license_is_expired
+        
+        return False
 
 
 class DriverCreateUpdateSerializer(serializers.ModelSerializer):

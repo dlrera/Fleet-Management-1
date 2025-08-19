@@ -20,7 +20,12 @@
       "Bash(timeout:*)",
       "WebFetch(domain:localhost)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(start http://localhost:3000/locations)",
+      "Bash(start http://localhost:3003)",
+      "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_frontend_api.html\")",
+      "Bash(start http://localhost:3000/drivers)",
+      "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_ui_functionality.html\")"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

@@ -28,8 +28,8 @@
 
       <v-card-text>
         <!-- Zone Statistics -->
-        <v-row class="mb-4">
-          <v-col cols="12" md="3">
+        <v-row class="mb-4" style="gap: 12px;">
+          <v-col cols="12" md="3" style="padding: 0;">
             <div 
               class="stat-card" 
               :class="{ 'stat-card-active': activeFilter === 'all' }"
@@ -39,7 +39,7 @@
               <div class="stat-label">Total Zones</div>
             </div>
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="3" style="padding: 0;">
             <div 
               class="stat-card"
               :class="{ 'stat-card-active': activeFilter === 'active' }"
@@ -49,7 +49,7 @@
               <div class="stat-label">Active Zones</div>
             </div>
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="3" style="padding: 0;">
             <div 
               class="stat-card"
               :class="{ 'stat-card-active': activeFilter === 'depot' }"
@@ -59,7 +59,7 @@
               <div class="stat-label">Depots</div>
             </div>
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="3" style="padding: 0;">
             <div 
               class="stat-card"
               :class="{ 'stat-card-active': activeFilter === 'service' }"

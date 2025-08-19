@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Management UI Functionality Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-group {
+            margin: 15px 0;
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 3px solid #ddd;
+        }
+        .test-item.testing {
+            border-left-color: #2196f3;
+            background: #e3f2fd;
+        }
+        .test-item.pass {
+            border-left-color: #4caf50;
+            background: #e8f5e9;
+        }
+        .test-item.fail {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #1976d2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        button.secondary {
+            background: #757575;
+        }
+        button.secondary:hover {
+            background: #616161;
+        }
+        .status {
+            margin-left: auto;
+            padding: 4px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.pending { background: #e0e0e0; color: #666; }
+        .status.testing { background: #2196f3; color: white; }
+        .status.pass { background: #4caf50; color: white; }
+        .status.fail { background: #f44336; color: white; }
+        .error-details {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3e0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #e65100;
+        }
+        #console {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fleet Management UI Functionality Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>Test Configuration</h2>
+        <div>
+            <label>API Base URL: </label>
+            <input type="text" id="apiUrl" value="http://localhost:8000/api" style="width: 300px; padding: 5px;">
+            <button onclick="testConnection()">Test Connection</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Auth Token: </label>
+            <input type="text" id="authToken" placeholder="Enter auth token" style="width: 300px; padding: 5px;">
+            <button class="secondary" onclick="getToken()">Get Token</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Drivers Tab Tests</h2>
+        <button onclick="runDriverTests()">Run All Driver Tests</button>
+        
+        <div class="test-group">
+            <div class="test-item" id="drivers-stats">
+                <span>📊 Statistics Cards Loading</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="drivers-filter">
+                <span>🔍 Filter Functionality</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="drivers-search">
+                <span>🔎 Search Functionality</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="drivers-table">
+                <span>📋 Table Loading & Pagination</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="drivers-alerts">
+                <span>⚠️ Alert System (Critical Alerts)</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="drivers-bulk">
+                <span>✅ Bulk Selection & Actions</span>
+                <span class="status pending">PENDING</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Fuel Tab Tests</h2>
+        <button onclick="runFuelTests()">Run All Fuel Tests</button>
+        
+        <div class="test-group">
+            <div class="test-item" id="fuel-stats">
+                <span>📊 Statistics Cards (Volume, Cost, MPG)</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="fuel-filter">
+                <span>🔍 Vehicle & Date Filters</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="fuel-search">
+                <span>🔎 Transaction Search</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="fuel-table">
+                <span>📋 Transactions Table</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="fuel-mpg">
+                <span>⛽ MPG Calculation</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="fuel-anomalies">
+                <span>🚨 Anomaly Detection</span>
+                <span class="status pending">PENDING</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Locations Tab Tests</h2>
+        <button onclick="runLocationTests()">Run All Location Tests</button>
+        
+        <div class="test-group">
+            <div class="test-item" id="locations-stats">
+                <span>📊 Statistics Cards & Coverage</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="locations-filter">
+                <span>⏰ Time Filter (1hr, 6hr, 24hr, etc.)</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="locations-map">
+                <span>🗺️ Map Data Loading</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="locations-zones">
+                <span>📍 Zone Display</span>
+                <span class="status pending">PENDING</span>
+            </div>
+            <div class="test-item" id="locations-coverage">
+                <span>📈 Coverage Calculation (≤100%)</span>
+                <span class="status pending">PENDING</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <div id="console"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let authToken = '';
+
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ef5350' : type === 'success' ? '#66bb6a' : '#aed581';
+            console.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function updateTestStatus(testId, status, error = null) {
+            const testItem = document.getElementById(testId);
+            if (!testItem) return;
+            
+            testItem.className = `test-item ${status}`;
+            const statusEl = testItem.querySelector('.status');
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = status.toUpperCase();
+            
+            if (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-details';
+                errorDiv.textContent = error;
+                testItem.appendChild(errorDiv);
+            }
+        }
+
+        async function getToken() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: 'admin', password: 'admin'})
+                });
+                const data = await response.json();
+                if (data.token) {
+                    document.getElementById('authToken').value = data.token;
+                    authToken = data.token;
+                    log('✓ Auth token obtained', 'success');
+                }
+            } catch (error) {
+                log('✗ Failed to get token: ' + error.message, 'error');
+            }
+        }
+
+        async function testConnection() {
+            const url = document.getElementById('apiUrl').value;
+            try {
+                const response = await fetch(`${url}/assets/stats/`);
+                if (response.ok) {
+                    log('✓ API connection successful', 'success');
+                } else {
+                    log('✗ API returned status: ' + response.status, 'error');
+                }
+            } catch (error) {
+                log('✗ Connection failed: ' + error.message, 'error');
+            }
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            const token = document.getElementById('authToken').value || authToken;
+            const headers = {
+                'Authorization': `Token ${token}`,
+                ...options.headers
+            };
+            
+            const response = await fetch(`${API_BASE}${endpoint}`, {
+                ...options,
+                headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+        }
+
+        async function runDriverTests() {
+            log('Starting Driver Tab Tests...', 'info');
+            
+            // Test 1: Statistics
+            updateTestStatus('drivers-stats', 'testing');
+            try {
+                const stats = await makeRequest('/drivers/stats/');
+                if (stats.total_drivers !== undefined && stats.active_drivers !== undefined) {
+                    updateTestStatus('drivers-stats', 'pass');
+                    log(`✓ Driver stats loaded: ${stats.total_drivers} total, ${stats.active_drivers} active`);
+                    
+                    // Check new critical alerts field
+                    if (stats.drivers_with_critical_alerts !== undefined) {
+                        log(`✓ Critical alerts working: ${stats.drivers_with_critical_alerts} drivers with issues`);
+                    }
+                } else {
+                    throw new Error('Invalid stats response');
+                }
+            } catch (error) {
+                updateTestStatus('drivers-stats', 'fail', error.message);
+                log('✗ Stats test failed: ' + error.message, 'error');
+            }
+            
+            // Test 2: Filters
+            updateTestStatus('drivers-filter', 'testing');
+            try {
+                const filtered = await makeRequest('/drivers/?employment_status=active');
+                updateTestStatus('drivers-filter', 'pass');
+                log(`✓ Filter test passed: ${filtered.results.length} active drivers`);
+            } catch (error) {
+                updateTestStatus('drivers-filter', 'fail', error.message);
+                log('✗ Filter test failed: ' + error.message, 'error');
+            }
+            
+            // Test 3: Search
+            updateTestStatus('drivers-search', 'testing');
+            try {
+                const search = await makeRequest('/drivers/?search=john');
+                updateTestStatus('drivers-search', 'pass');
+                log(`✓ Search test passed: ${search.results.length} results for "john"`);
+            } catch (error) {
+                updateTestStatus('drivers-search', 'fail', error.message);
+                log('✗ Search test failed: ' + error.message, 'error');
+            }
+            
+            // Test 4: Table/Pagination
+            updateTestStatus('drivers-table', 'testing');
+            try {
+                const page1 = await makeRequest('/drivers/?page=1&page_size=10');
+                if (page1.results && page1.count !== undefined) {
+                    updateTestStatus('drivers-table', 'pass');
+                    log(`✓ Table pagination working: ${page1.count} total drivers`);
+                } else {
+                    throw new Error('Invalid pagination response');
+                }
+            } catch (error) {
+                updateTestStatus('drivers-table', 'fail', error.message);
+                log('✗ Table test failed: ' + error.message, 'error');
+            }
+            
+            // Test 5: Alert System
+            updateTestStatus('drivers-alerts', 'testing');
+            try {
+                const drivers = await makeRequest('/drivers/');
+                const driversWithAlerts = drivers.results.filter(d => d.has_critical_alert);
+                updateTestStatus('drivers-alerts', 'pass');
+                log(`✓ Alert system working: ${driversWithAlerts.length} drivers with critical alerts`);
+            } catch (error) {
+                updateTestStatus('drivers-alerts', 'fail', error.message);
+                log('✗ Alert test failed: ' + error.message, 'error');
+            }
+            
+            // Test 6: Bulk Actions (just check endpoint exists)
+            updateTestStatus('drivers-bulk', 'testing');
+            try {
+                // Just test that the endpoint responds
+                const response = await fetch(`${API_BASE}/drivers/bulk_update/`, {
+                    method: 'OPTIONS',
+                    headers: {'Authorization': `Token ${authToken}`}
+                });
+                if (response.ok || response.status === 405) {
+                    updateTestStatus('drivers-bulk', 'pass');
+                    log('✓ Bulk actions endpoint available');
+                } else {
+                    throw new Error('Bulk endpoint not available');
+                }
+            } catch (error) {
+                updateTestStatus('drivers-bulk', 'fail', error.message);
+                log('✗ Bulk test failed: ' + error.message, 'error');
+            }
+        }
+
+        async function runFuelTests() {
+            log('Starting Fuel Tab Tests...', 'info');
+            
+            // Test 1: Statistics
+            updateTestStatus('fuel-stats', 'testing');
+            try {
+                const stats = await makeRequest('/fuel/stats/');
+                if (stats.total_volume !== undefined && stats.total_cost !== undefined) {
+                    updateTestStatus('fuel-stats', 'pass');
+                    log(`✓ Fuel stats loaded: ${stats.total_volume} gal, $${stats.total_cost}`);
+                } else {
+                    throw new Error('Invalid stats response');
+                }
+            } catch (error) {
+                updateTestStatus('fuel-stats', 'fail', error.message);
+                log('✗ Stats test failed: ' + error.message, 'error');
+            }
+            
+            // Test 2: Filters
+            updateTestStatus('fuel-filter', 'testing');
+            try {
+                const filtered = await makeRequest('/fuel/transactions/?product_type=gasoline');
+                updateTestStatus('fuel-filter', 'pass');
+                log(`✓ Filter test passed: ${filtered.results.length} gasoline transactions`);
+            } catch (error) {
+                updateTestStatus('fuel-filter', 'fail', error.message);
+                log('✗ Filter test failed: ' + error.message, 'error');
+            }
+            
+            // Test 3: Search
+            updateTestStatus('fuel-search', 'testing');
+            try {
+                const search = await makeRequest('/fuel/transactions/?search=shell');
+                updateTestStatus('fuel-search', 'pass');
+                log(`✓ Search test passed: ${search.results.length} results`);
+            } catch (error) {
+                updateTestStatus('fuel-search', 'fail', error.message);
+                log('✗ Search test failed: ' + error.message, 'error');
+            }
+            
+            // Test 4: Table
+            updateTestStatus('fuel-table', 'testing');
+            try {
+                const transactions = await makeRequest('/fuel/transactions/');
+                if (transactions.results && Array.isArray(transactions.results)) {
+                    updateTestStatus('fuel-table', 'pass');
+                    log(`✓ Transaction table loaded: ${transactions.count} total transactions`);
+                } else {
+                    throw new Error('Invalid transactions response');
+                }
+            } catch (error) {
+                updateTestStatus('fuel-table', 'fail', error.message);
+                log('✗ Table test failed: ' + error.message, 'error');
+            }
+            
+            // Test 5: MPG Calculation
+            updateTestStatus('fuel-mpg', 'testing');
+            try {
+                const transactions = await makeRequest('/fuel/transactions/');
+                const withMPG = transactions.results.filter(t => t.mpg !== null);
+                updateTestStatus('fuel-mpg', 'pass');
+                log(`✓ MPG calculations: ${withMPG.length} transactions with MPG data`);
+            } catch (error) {
+                updateTestStatus('fuel-mpg', 'fail', error.message);
+                log('✗ MPG test failed: ' + error.message, 'error');
+            }
+            
+            // Test 6: Anomalies
+            updateTestStatus('fuel-anomalies', 'testing');
+            try {
+                const anomalies = await makeRequest('/fuel/anomalies/');
+                updateTestStatus('fuel-anomalies', 'pass');
+                log(`✓ Anomaly detection: ${anomalies.open_alerts || 0} alerts found`);
+            } catch (error) {
+                updateTestStatus('fuel-anomalies', 'fail', error.message);
+                log('✗ Anomaly test failed: ' + error.message, 'error');
+            }
+        }
+
+        async function runLocationTests() {
+            log('Starting Location Tab Tests...', 'info');
+            
+            // Test 1: Statistics
+            updateTestStatus('locations-stats', 'testing');
+            try {
+                const stats = await makeRequest('/locations/updates/stats/');
+                if (stats.total_updates !== undefined && stats.tracking_coverage !== undefined) {
+                    updateTestStatus('locations-stats', 'pass');
+                    log(`✓ Location stats loaded: ${stats.total_updates} updates, ${stats.tracking_coverage}% coverage`);
+                } else {
+                    throw new Error('Invalid stats response');
+                }
+            } catch (error) {
+                updateTestStatus('locations-stats', 'fail', error.message);
+                log('✗ Stats test failed: ' + error.message, 'error');
+            }
+            
+            // Test 2: Time Filter
+            updateTestStatus('locations-filter', 'testing');
+            try {
+                const data1hr = await makeRequest('/locations/current/map_data/?within_hours=1');
+                const data24hr = await makeRequest('/locations/current/map_data/?within_hours=24');
+                
+                if (data1hr.assets && data24hr.assets) {
+                    updateTestStatus('locations-filter', 'pass');
+                    log(`✓ Time filter working: 1hr=${data1hr.assets.length} assets, 24hr=${data24hr.assets.length} assets`);
+                } else {
+                    throw new Error('Invalid filter response');
+                }
+            } catch (error) {
+                updateTestStatus('locations-filter', 'fail', error.message);
+                log('✗ Filter test failed: ' + error.message, 'error');
+            }
+            
+            // Test 3: Map Data
+            updateTestStatus('locations-map', 'testing');
+            try {
+                const mapData = await makeRequest('/locations/current/map_data/');
+                if (mapData.assets && mapData.zones) {
+                    updateTestStatus('locations-map', 'pass');
+                    log(`✓ Map data loaded: ${mapData.assets.length} assets, ${mapData.zones.length} zones`);
+                } else {
+                    throw new Error('Invalid map data');
+                }
+            } catch (error) {
+                updateTestStatus('locations-map', 'fail', error.message);
+                log('✗ Map test failed: ' + error.message, 'error');
+            }
+            
+            // Test 4: Zones
+            updateTestStatus('locations-zones', 'testing');
+            try {
+                const zones = await makeRequest('/locations/zones/');
+                updateTestStatus('locations-zones', 'pass');
+                log(`✓ Zones loaded: ${zones.results.length} zones`);
+            } catch (error) {
+                updateTestStatus('locations-zones', 'fail', error.message);
+                log('✗ Zones test failed: ' + error.message, 'error');
+            }
+            
+            // Test 5: Coverage Calculation
+            updateTestStatus('locations-coverage', 'testing');
+            try {
+                const stats = await makeRequest('/locations/updates/stats/');
+                if (stats.tracking_coverage !== undefined && stats.tracking_coverage <= 100) {
+                    updateTestStatus('locations-coverage', 'pass');
+                    log(`✓ Coverage calculation valid: ${stats.tracking_coverage}% (≤100%)`);
+                } else {
+                    throw new Error(`Invalid coverage: ${stats.tracking_coverage}%`);
+                }
+            } catch (error) {
+                updateTestStatus('locations-coverage', 'fail', error.message);
+                log('✗ Coverage test failed: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-get token on load
+        window.onload = () => {
+            getToken();
+        };
+    </script>
+</body>
+</html>

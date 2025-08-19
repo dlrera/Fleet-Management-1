@@ -163,7 +163,7 @@ class LocationUpdateViewSet(viewsets.ModelViewSet):
         recent_threshold = timezone.now() - timedelta(hours=24)
         assets_with_recent_locations = AssetLocationSummary.objects.filter(
             timestamp__gte=recent_threshold
-        ).count()
+        ).values('asset').distinct().count()
         
         # Total trackable assets
         total_assets = Asset.objects.exclude(status='retired').count()
