@@ -13,6 +13,7 @@ urlpatterns = [
     path('api/locations/', include('locations.urls')),
     path('api/drivers/', include('drivers.urls')),
     path('api/fuel/', include('fuel.urls')),
+    path('api/cap-planning/v1/', include('capital_planning.urls')),
     path('api-auth/', include('rest_framework.urls')),
 ]
 

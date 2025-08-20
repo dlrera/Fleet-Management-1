@@ -25,7 +25,14 @@
       "Bash(start http://localhost:3003)",
       "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_frontend_api.html\")",
       "Bash(start http://localhost:3000/drivers)",
-      "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_ui_functionality.html\")"
+      "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_ui_functionality.html\")",
+      "Bash(set CAPITAL_PLANNING_ENABLED=true)",
+      "Bash(start http://localhost:3000/capital-planning)",
+      "Bash(start http://localhost:3000)",
+      "Bash(del create_test_data.py)",
+      "Bash(npm test:*)",
+      "Bash(pip freeze)",
+      "Bash(start \"C:\\Users\\Dan Rera\\Git Repos\\Fleet-Management-1\\test_capital_plan_browser.html\")"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [

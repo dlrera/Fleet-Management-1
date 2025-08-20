@@ -108,6 +108,104 @@ const routes = [
     name: 'AuditLogs',
     component: () => import('../views/Admin/AuditLogs.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/capital-planning',
+    name: 'CapitalPlansList',
+    component: () => import('../views/CapitalPlanning/PlansList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/new',
+    name: 'CapitalPlanCreate',
+    component: () => import('../views/CapitalPlanning/PlanForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/:id',
+    name: 'CapitalPlanDetail',
+    component: () => import('../views/CapitalPlanning/PlanDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/:id/edit',
+    name: 'CapitalPlanEdit',
+    component: () => import('../views/CapitalPlanning/PlanForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/asset-lifecycle',
+    name: 'AssetLifecycleList',
+    component: () => import('../views/CapitalPlanning/AssetLifecycleList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/asset-lifecycle/new',
+    name: 'AssetLifecycleCreate',
+    component: () => import('../views/CapitalPlanning/AssetLifecycleForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/asset-lifecycle/:id',
+    name: 'AssetLifecycleDetail',
+    component: () => import('../views/CapitalPlanning/AssetLifecycleDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/asset-lifecycle/:id/edit',
+    name: 'AssetLifecycleEdit',
+    component: () => import('../views/CapitalPlanning/AssetLifecycleForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/projects',
+    name: 'CapitalProjectsList',
+    component: () => import('../views/CapitalPlanning/ProjectsList.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/projects/new',
+    name: 'CapitalProjectCreate',
+    component: () => import('../views/CapitalPlanning/ProjectForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/projects/:id',
+    name: 'CapitalProjectDetail',
+    component: () => import('../views/CapitalPlanning/ProjectDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/projects/:id/edit',
+    name: 'CapitalProjectEdit',
+    component: () => import('../views/CapitalPlanning/ProjectForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/new',
+    name: 'CapitalPlanCreate',
+    component: () => import('../views/CapitalPlanning/PlanForm.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/capital-planning/:id',
+    name: 'CapitalPlanDetail',
+    component: () => import('../views/CapitalPlanning/PlanDetail.vue'),
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
+    path: '/capital-planning/:id/edit',
+    name: 'CapitalPlanEdit',
+    component: () => import('../views/CapitalPlanning/PlanForm.vue'),
+    meta: { requiresAuth: true },
+    props: true
   }
 ]
 

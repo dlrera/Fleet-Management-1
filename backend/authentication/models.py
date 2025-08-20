@@ -112,7 +112,7 @@ class AuditLog(models.Model):
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True)
     request_id = models.UUIDField(null=True, blank=True)
-    session_id = models.CharField(max_length=100, blank=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True)
     
     # Additional context
     reason = models.TextField(blank=True)

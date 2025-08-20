@@ -64,6 +64,16 @@
             color="primary"
             style="color: white !important;"
           ></v-list-item>
+          
+          <v-divider class="my-2"></v-divider>
+          
+          <v-list-item
+            prepend-icon="mdi-cash-multiple"
+            title="Capital Planning"
+            to="/capital-planning"
+            color="primary"
+            style="color: white !important;"
+          ></v-list-item>
         </v-list>
       </v-navigation-drawer>
 

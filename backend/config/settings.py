@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'locations',
     'drivers',
     'fuel',
+    'capital_planning',
 ]
 
 MIDDLEWARE = [
@@ -226,3 +227,6 @@ RATELIMIT_USE_CACHE = 'default'
 # Authentication rate limits
 AUTH_LOGIN_RATE_LIMIT = '5/5m'  # 5 attempts per 5 minutes
 AUTH_REGISTER_RATE_LIMIT = '3/h'  # 3 registrations per hour
+
+# Capital Planning Feature Flag
+CAPITAL_PLANNING_ENABLED = os.environ.get('CAPITAL_PLANNING_ENABLED', 'False').lower() == 'true'

@@ -79,7 +79,7 @@ class AuditLoggingMiddleware(MiddlewareMixin):
                 ip_address=self.get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
                 request_id=getattr(request, 'request_id', None),
-                session_id=request.session.session_key if hasattr(request, 'session') else '',
+                session_id=request.session.session_key if hasattr(request, 'session') and request.session else None,
                 risk_score=self.calculate_risk_score(request, response)
             )
         except Exception as e:
